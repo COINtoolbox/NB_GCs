@@ -15,27 +15,27 @@ At the end the analysis is repeated using the black hole mass instead of the dyn
 
 # Data
 The data set 'GCs.csv' sent by e-mail by Rafael on Dec 1st is used.
-``` {r Read data}
-GCS = read.csv(file="GCs.csv",header=TRUE,dec=".",sep="")
+``` {r "Read data"}
+GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
 dim(GCS)
 ```
 Of the initial 422 galaxies in the catalog, 45 are retained for which variables needed here are present. The errors are used further down. Weights are defined to be the inverse of the error.
-``` {r Weights}
+``` {r "Weights"}
 GCS$w = 1/ GCS$N_GC_err
 ```
 It is somewhat strange that in the catalogue the GCS count is not always integer; an integer version is derived here simply by rounding.
 * NOTE: in Rafas file these are integer! *
 
 Before proceding some useful libraries are loaded.
-``` {r Libraries}
+``` {r "Libraries"}
 library(ggplot2)
 library(MASS)     # glm.nb
 ```
 
 # Modeling
 The first way to model counts is using a linear model for the log counts. The second is a glm poisson model, the third is a glm with negative binomial. These are specified and fitted as follows.
-``` {r Fit models}
+``` {r "Fit models"}
 linmFit = lm(log(N_GC) ~ Mdyn, GCS)
 poisFit = glm(N_GC ~ Mdyn, GCS, family="poisson")
 negbFit = glm.nb(N_GC ~ Mdyn, GCS)
@@ -56,7 +56,7 @@ The three are not dramatically different.
 
 # Model comparison
 A quantitative comparison is obtained using leave-one-out cross validation (LOO-CV). Each observation is left out once and predicted using a model fit on the other data. The errors are the differences between the predictions and true values. The squared differences are weighted using the weights derived earlier, inversely proportional to the errors on the known values. LOO-CV is implemented as follows.
-``` {r LOO calculation}
+``` {r "LOO calculation"}
 N = nrow(GCS)
 A = data.frame(linm=rep(NA,N))
 A$negb = A$pois = NA
@@ -71,7 +71,7 @@ for (i in 1:N) {
 }
 ``` 
 The square root of the mean of the values in A gives the LOO-CV measure.
-``` {r LOO result}
+``` {r "LOO result"}
 lapply(A, function(x) sqrt(mean(x)))
 ``` 
 Based on the LOO-CV criterion, the linear model is best. In this case there is no benefit in using Poisson or negative binomial models. 
