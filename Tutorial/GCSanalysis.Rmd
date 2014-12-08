@@ -24,6 +24,7 @@ dim(GCS)
 Of the initial 422 galaxies in the catalog, 45 are retained for which variables needed here are present. The errors are used further down. Weights are defined to be the inverse of the error.
 ``` {r Weights}
 GCS$w = 1/ GCS$N_GC_err
+
 ```
 It is somewhat strange that in the catalogue the GCS count is not always integer; an integer version is derived here simply by rounding.
 * NOTE: in Rafas file these are integer! *

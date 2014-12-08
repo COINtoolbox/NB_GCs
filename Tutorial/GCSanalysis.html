@@ -197,8 +197,45 @@ lapply(A, function(x) sqrt(mean(x)))</code></pre>
 ## $negb
 ## [1] 131.9</code></pre>
 </div>
-<div id="errors-for-glm" class="section level1">
-<h1>Errors for GLM</h1>
+<div id="fold-cross-validation" class="section level1">
+<h1>10-fold cross validation</h1>
+<pre class="r"><code>require(caret)</code></pre>
+<pre><code>## Loading required package: caret
+## 
+## Attaching package: 'caret'
+## 
+## The following object is masked from 'package:gamlss':
+## 
+##     calibration</code></pre>
+<pre class="r"><code>folds &lt;- createFolds(GCS$N_GC, k=10)
+A = data.frame(linm=rep(NA,N))
+A$negb = A$pois = A$gauss= NA
+for (i in 1:10) {
+   Gx = GCS[-folds[[i]],]
+   f1 = lm(log(N_GC) ~ MBH, Gx)
+   f2 = glm(log(N_GC) ~ MBH, family=&quot;gaussian&quot;,Gx)
+   f3 = glm(N_GC ~ MBH, Gx, family=&quot;poisson&quot;)
+   f4 = glm.nb(N_GC ~ MBH, Gx)
+   A[folds[[i]],&quot;linm&quot;] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f1, GCS[folds[[i]],])))^2
+   A[folds[[i]],&quot;gauss&quot;] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f2, GCS[folds[[i]],])))^2
+   A[folds[[i]], &quot;pois&quot;] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f3, GCS[folds[[i]],]))^2   
+   A[folds[[i]], &quot;negb&quot;] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f4, GCS[folds[[i]],]))^2   
+}
+lapply(A, function(x) sqrt(mean(x)))</code></pre>
+<pre><code>## $linm
+## [1] 93.82
+## 
+## $gauss
+## [1] 93.82
+## 
+## $pois
+## [1] 131.9
+## 
+## $negb
+## [1] 131.9</code></pre>
+</div>
+<div id="errors-for-glm-prediction" class="section level1">
+<h1>Errors for GLM Prediction</h1>
 <pre class="r"><code>pred_glm&lt;-function(x){
 preds &lt;- predict(x, type = &quot;link&quot;, se.fit = TRUE)
 critval &lt;- 1.96 ## approx 95% CI
