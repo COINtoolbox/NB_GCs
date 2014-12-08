@@ -2,7 +2,7 @@
 ---
 title: "GCS analysis"
 author: "Bart Buelens, Rafael S. de Souza"
-date: "December 6, 2014"
+date: "December 8, 2014"
 output: pdf_document
 ---
 
@@ -36,9 +36,9 @@ library(MASS)     # glm.nb
 library(COUNT)   # diagnostics
 library(lmtest) # Likelihood test
 library(gamlss.tr)# zero truncated model
-library(glmmADMB)  # GLMM
+# library(glmmADMB)  # GLMM
 library(caret) # 10-fold
-
+library(reshape) # melt
 ```
 
 # Modeling
@@ -145,6 +145,8 @@ lapply(A, function(x) sqrt(mean(x)))
 
 # Errors for GLM  Prediction
 
+## Confidence interval
+
 ``` {r}
 pred_glm<-function(x){
 preds <- predict(x, type = "link", se.fit = TRUE)
@@ -162,16 +164,103 @@ return(list(fit=fit2,lwr=lwr2,upr=upr2,errlow =errlow,errup=errup))
 }
 ```
 
+## Prediction
 
+The above computes a confidence interval. Following code is an attempt to compute prediction intervals: taking into account variance of estimated parameters through bootstrap, and prediction uncertainty due to model variance.
+
+``` {r, cache = TRUE}
+N = nrow(GCS)
+# predN = 50
+# MBHx = data.frame(MBH = seq(from = 0.9 * min(GCS$MBH), 
+#                             to = 1.1 * max(GCS$MBH), 
+#                             length.out = predN))
+# Do the following instead, to enable calculation of coverage.
+MBHx = data.frame(MBH = GCS$MBH)
+predN = length(GCS$MBH)
+bN = 1000
+Blinm = Bpois = Bnegb = matrix(data = NA, nrow = bN, ncol = predN)
+BlinmU = BlinmL = BpoisU = BpoisL = BnegbU = BnegbL = Blinm
+qlwr = 0.025
+qupr = 0.975
+for (i in 1:bN) {
+  G = GCS[sample(1:N, N, replace = TRUE),]
+  linmFit = glm(log(N_GC) ~ MBH, G, family="gaussian")
+  poisFit = glm(N_GC ~ MBH, G, family="poisson")
+  negbFit = glm.nb(N_GC ~ MBH, G)
+  linmP = predict(linmFit, MBHx)
+  poisP = predict(poisFit, MBHx)
+  negbP = predict(negbFit, MBHx)
+  Blinm[i,] = linmP
+  BlinmL[i,] = qnorm(qlwr, mean = linmP, sd = sd(residuals(linmFit)))
+  BlinmU[i,] = qnorm(qupr, mean = linmP, sd = sd(residuals(linmFit)))
+  Bpois[i,] = poisP
+  BpoisL[i,] = log(qpois(qlwr, lambda = exp(poisP)))
+  BpoisU[i,] = log(qpois(qupr, lambda = exp(poisP)))
+  Bnegb[i,] = negbP
+  BnegbL[i,] = log(qnbinom(qlwr, size = negbFit$theta, mu = exp(negbP)))
+  BnegbU[i,] = log(qnbinom(qupr, size = negbFit$theta, mu = exp(negbP)))
+} 
+
+# fit once more, on the full sample, as a reference:
+linmFit = glm(log(N_GC) ~ MBH, GCS, family="gaussian")
+poisFit = glm(N_GC ~ MBH, GCS, family="poisson")
+negbFit = glm.nb(N_GC ~ MBH, GCS)
+linmPred = predict(linmFit, MBHx)
+poisPred = predict(poisFit, MBHx)
+negbPred = predict(negbFit, MBHx)
+
+# Compare bootstrap means with reference to check validity of bootstrap:
+summary(colMeans(Blinm) - linmPred)
+summary(colMeans(Bpois) - poisPred)
+summary(colMeans(Bnegb) - negbPred)
+
+# Now plot predicted means and prediction intervals
+P = MBHx
+P$linm = linmPred
+P$pois = poisPred
+P$negb = negbPred
+P = melt(P, id.vars = "MBH", variable_name = "model")
+names(P)[3] = "logN_GC"
+P$lwr = c(colMeans(BlinmL), colMeans(BpoisL), colMeans(BnegbL))
+P$upr = c(colMeans(BlinmU), colMeans(BpoisU), colMeans(BnegbU))
+
+GCS$logN_GC = log(GCS$N_GC)
+ggplot(GCS, aes(x = MBH, y = logN_GC)) + 
+  geom_point() + 
+  geom_line(data=P, aes(x = MBH, y=logN_GC, colour=model)) +  
+  geom_ribbon(data=P, aes(ymin=lwr, ymax=upr, fill=model), alpha=0.5) + 
+  facet_wrap(~ model, ncol=1)
+```
+
+Consider coverage.
+``` {r}
+P$obs = rep(GCS$logN_GC,3)
+P$cov = P$lwr <= P$obs & P$obs <= P$upr
+table(P[,c("model","cov")])
+aggregate(P$cov, by=list(P$model), FUN = function(x) sum(x)/length(GCS$MBH))
+```
+Negative binomial has best coverage, as it should be 95%. Poisson is very bad, as it is unable to capture the overdispersion.
+
+# Bias diagnostic
+Modeling log counts as a linear model with gaussian error tends to lead to biased results on the actual scale of the counts. Compare the total number of GCS in the sample with the total of the fitted values.
+
+``` {r}
+sum(GCS$N_GC)
+sum(exp(linmFit$fitted.values)) 
+sum(poisFit$fitted.values)
+sum(negbFit$fitted.values)
+```
+We could compute errors on these in the above bootstrap routine.
 
 # Goodness of fit 
+Deviance is asymptotically chi squared:
 
 ``` {r}
  1 - pchisq(summary(gaussFit)$deviance,summary(gaussFit)$df.residual)
  1 - pchisq(summary(poisFit)$deviance,summary(poisFit)$df.residual)
  1 - pchisq(summary(negbFit)$deviance,summary(negbFit)$df.residual)
 ````
-
+The Poisson model is not good. The other two are not rejected based on the deviance assessment. Note that the sample is rather small so care must be taken with asymptotics.
 
 # References
 
