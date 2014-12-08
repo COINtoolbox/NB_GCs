@@ -18,7 +18,7 @@ At the end the analysis is repeated using the black hole mass instead of the dyn
 The data set 'GCs.csv' sent by e-mail by Rafael on Dec 1st is used.
 ``` {r Read data}
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
-GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
+GCS = subset(GCS, Type=="E" & !is.na(Mdyn)) # 1 removed
 dim(GCS)
 ```
 Of the initial 422 galaxies in the catalog, 45 are retained for which variables needed here are present. The errors are used further down. Weights are defined to be the inverse of the error.
