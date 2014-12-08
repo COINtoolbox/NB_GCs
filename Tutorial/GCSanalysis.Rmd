@@ -142,10 +142,6 @@ for (i in 1:10) {
 lapply(A, function(x) sqrt(mean(x)))
 ```
 
-# Step AIC
-
-glmFit1 <- glm.nb(N_GC ~ MBH + sig_e+Type, data = GCS)
-step(glmFit1, GCS,direction = c("backward"))
 
 # Errors for GLM  Prediction
 
