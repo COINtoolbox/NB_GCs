@@ -67,7 +67,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="data" class="section level1">
 <h1>Data</h1>
 <p>The data set ‘GCs.csv’ sent by e-mail by Rafael on Dec 1st is used.</p>
-<pre class="r"><code>GCS = read.csv(file=&quot;GCs.csv&quot;,header=TRUE,dec=&quot;.&quot;,sep=&quot;&quot;)
+<pre class="r"><code>GCS = read.csv(file=&quot;..//Dataset//GCs.csv&quot;,header=TRUE,dec=&quot;.&quot;,sep=&quot;&quot;)
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
 dim(GCS)</code></pre>
 <pre><code>## [1] 45 15</code></pre>
