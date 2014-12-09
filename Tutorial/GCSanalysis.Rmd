@@ -95,6 +95,8 @@ linmFit = lm(log(N_GC) ~ MBH, GCS)
 gaussFit = glm(log(N_GC) ~ MBH, family="gaussian",GCS)
 poisFit = glm(N_GC ~MBH, GCS, family="poisson")
 negbFit = glm.nb(N_GC ~ MBH, GCS)
+negbmFit <- glmmadmb(N_GC~MBH +(1|Type),
+                  data=GCS, family="nbinom")
 gen.trun(0,"NBI",type="left",name="lefttr")
 trunFit=gamlss(N_GC ~ MBH, data=na.omit(GCS),family=NBIlefttr)
 X = GCS[,c("Galaxy","MBH","N_GC")]
@@ -134,6 +136,7 @@ for (i in 1:10) {
    f2 = glm(log(N_GC) ~ MBH, family="gaussian",Gx)
    f3 = glm(N_GC ~ MBH, Gx, family="poisson")
    f4 = glm.nb(N_GC ~ MBH+sig_e, Gx)
+   f4 = glm.nb(N_GC ~ MBH, Gx)
    A[folds[[i]],"linm"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f1, GCS[folds[[i]],])))^2
    A[folds[[i]],"gauss"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f2, GCS[folds[[i]],])))^2
    A[folds[[i]], "pois"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f3, GCS[folds[[i]],]))^2   
