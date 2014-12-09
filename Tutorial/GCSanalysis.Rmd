@@ -135,7 +135,6 @@ for (i in 1:10) {
    f1 = lm(log(N_GC) ~ MBH, Gx)
    f2 = glm(log(N_GC) ~ MBH, family="gaussian",Gx)
    f3 = glm(N_GC ~ MBH, Gx, family="poisson")
-   f4 = glm.nb(N_GC ~ MBH+sig_e, Gx)
    f4 = glm.nb(N_GC ~ MBH, Gx)
    A[folds[[i]],"linm"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f1, GCS[folds[[i]],])))^2
    A[folds[[i]],"gauss"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f2, GCS[folds[[i]],])))^2
