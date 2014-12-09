@@ -36,7 +36,7 @@ library(MASS)     # glm.nb
 library(COUNT)   # diagnostics
 library(lmtest) # Likelihood test
 library(gamlss.tr)# zero truncated model
-# library(glmmADMB)  # GLMM
+#library(glmmADMB)  # GLMM
 library(caret) # 10-fold
 library(reshape) # melt
 ```
@@ -95,18 +95,19 @@ linmFit = lm(log(N_GC) ~ MBH, GCS)
 gaussFit = glm(log(N_GC) ~ MBH, family="gaussian",GCS)
 poisFit = glm(N_GC ~MBH, GCS, family="poisson")
 negbFit = glm.nb(N_GC ~ MBH, GCS)
-negbmFit <- glmmadmb(N_GC~MBH +(1|Type),
-                  data=GCS, family="nbinom")
+#negbmFit <- glmmadmb(N_GC~MBH +(1|Type),
+#                  data=GCS, family="nbinom")
 gen.trun(0,"NBI",type="left",name="lefttr")
-trunFit=gamlss(N_GC ~ MBH, data=na.omit(GCS),family=NBIlefttr)
+trunFit=gamlss(N_GC ~ MBH, data=GCS[,c("N_GC","MBH")],family=NBIlefttr)
 X = GCS[,c("Galaxy","MBH","N_GC")]
-X = rbind(X,X,X,X,X)
-X$method = factor(rep(c("obs","linm","gauss","pois","negb"),each=nrow(GCS)))
+X = rbind(X,X,X,X,X,X)
+X$method = factor(rep(c("obs","linm","gauss","pois","negb","trunnegb"),each=nrow(GCS)))
 X[X$method == "linm","N_GC"] = exp(linmFit$fitted.values)
 X[X$method == "gauss","N_GC"] = exp(gaussFit$fitted.values)
 X[X$method == "pois","N_GC"] = poisFit$fitted.values
 X[X$method == "negb","N_GC"] = negbFit$fitted.values
-ggplot(X, aes(x = MBH,y=log(N_GC))) + 
+X[X$method == "trunnegb","N_GC"] = predict(trunFit, type="response")
+ggplot(X, aes(x = MBH,y=log(N_GC),linetype=method)) + 
    geom_point(aes(colour=method), data = subset(X, method=="obs")) + 
    geom_line(aes(colour=method), data = subset(X, method != "obs"))
 A = data.frame(linm=rep(NA,N))
@@ -117,10 +118,10 @@ for (i in 1:N) {
    f2 = glm(log(N_GC) ~ MBH, family="gaussian",Gx)
    f3 = glm(N_GC ~ MBH, Gx, family="poisson")
    f4 = glm.nb(N_GC ~ MBH, Gx)
-   A[i,"linm"] = GCS$w[i] * (GCS$N_GC[i] - exp(predict(f1, GCS[i,])))^2
-   A[i,"gauss"] = GCS$w[i] * (GCS$N_GC[i] - exp(predict(f2, GCS[i,])))^2
-   A[i, "pois"] = GCS$w[i] * (GCS$N_GC[i] - predict(f3, GCS[i,]))^2   
-   A[i, "negb"] = GCS$w[i] * (GCS$N_GC[i] - predict(f4, GCS[i,]))^2   
+   A[i,"linm"] = GCS$w[i] * (GCS$N_GC[i] - exp(predict(f1, GCS[i,],type="response")))^2
+   A[i,"gauss"] = GCS$w[i] * (GCS$N_GC[i] - exp(predict(f2, GCS[i,],type="response")))^2
+   A[i, "pois"] = GCS$w[i] * (GCS$N_GC[i] - predict(f3, GCS[i,],type="response"))^2   
+   A[i, "negb"] = GCS$w[i] * (GCS$N_GC[i] - predict(f4, GCS[i,],type="response"))^2   
 }
 lapply(A, function(x) sqrt(mean(x)))
 ```
@@ -136,10 +137,10 @@ for (i in 1:10) {
    f2 = glm(log(N_GC) ~ MBH, family="gaussian",Gx)
    f3 = glm(N_GC ~ MBH, Gx, family="poisson")
    f4 = glm.nb(N_GC ~ MBH, Gx)
-   A[folds[[i]],"linm"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f1, GCS[folds[[i]],])))^2
-   A[folds[[i]],"gauss"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f2, GCS[folds[[i]],])))^2
-   A[folds[[i]], "pois"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f3, GCS[folds[[i]],]))^2   
-   A[folds[[i]], "negb"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f4, GCS[folds[[i]],]))^2   
+   A[folds[[i]],"linm"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f1, GCS[folds[[i]],],type="response")))^2
+   A[folds[[i]],"gauss"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - exp(predict(f2, GCS[folds[[i]],],type="response")))^2
+   A[folds[[i]], "pois"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f3, GCS[folds[[i]],],type="response"))^2   
+   A[folds[[i]], "negb"] = GCS$w[folds[[i]]] * (GCS$N_GC[folds[[i]]] - predict(f4, GCS[folds[[i]],],type="response"))^2   
 }
 lapply(A, function(x) sqrt(mean(x)))
 ```
