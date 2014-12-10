@@ -63,8 +63,8 @@ ggplot(X, aes(x = Mdyn,y=N_GC)) +
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_color_solarized()+scale_shape_stata()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme(legend.position="right",plot.title = element_text(hjust=0.5),
+  theme_economist_white(gray_bg = F, base_size = 10, base_family = "sans")+
+  theme(legend.text=element_text(size=8),legend.position="right",plot.title = element_text(hjust=0.5),
         axis.title.y=element_text(vjust=0.75),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=10))+
