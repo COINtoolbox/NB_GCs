@@ -54,13 +54,24 @@ The results are now plotted using ggplot() from the ggplot2 package.
 ``` {r}
 X = GCS[,c("Galaxy","Mdyn","N_GC")]
 X = rbind(X,X,X,X)
-X$method = factor(rep(c("obs","linm","pois","negb"),each=nrow(GCS)))
-X[X$method == "linm","N_GC"] = exp(linmFit$fitted.values)
-X[X$method == "pois","N_GC"] = poisFit$fitted.values
-X[X$method == "negb","N_GC"] = negbFit$fitted.values
-ggplot(X, aes(x = Mdyn,y=log(N_GC))) + 
-   geom_point(aes(colour=method), data = subset(X, method=="obs")) + 
-   geom_line(aes(colour=method), data = subset(X, method != "obs")) 
+X$method = factor(rep(c("obs","OLS","Poisson","NB"),each=nrow(GCS)))
+X[X$method == "OLS","N_GC"] = exp(linmFit$fitted.values)
+X[X$method == "Poisson","N_GC"] = poisFit$fitted.values
+X[X$method == "NB","N_GC"] = negbFit$fitted.values
+ggplot(X, aes(x = Mdyn,y=N_GC)) + 
+   scale_y_continuous(trans = 'log10',
+                     breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_color_solarized()+scale_shape_stata()+
+  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(legend.position="right",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=10))+
+   geom_point(data = subset(X, method=="obs")) + 
+  geom_line(aes(colour=method,linetype=method), data = subset(X, method != "obs"))+
+  xlab(expression(M[dyn]))+ylab(expression(N[GC]))
+  
 ``` 
 The three are not dramatically different. 
 
@@ -103,13 +114,13 @@ negbFit = glm.nb(N_GC ~ MBH, GCS)
 #trunFit=gamlss(N_GC ~ MBH, data=GCS[,c("N_GC","MBH")],family=NBIlefttr)
 X = GCS[,c("Galaxy","MBH","N_GC")]
 X = rbind(X,X,X,X)
-X$method = factor(rep(c("obs","linm","pois","negb"),each=nrow(GCS)))
-X[X$method == "linm","N_GC"] = exp(linmFit$fitted.values)
+X$method = factor(rep(c("obs","OLS","Poisson","NB"),each=nrow(GCS)))
+X[X$method == "OLS","N_GC"] = exp(linmFit$fitted.values)
 #X[X$method == "gauss","N_GC"] = exp(gaussFit$fitted.values)
-X[X$method == "pois","N_GC"] = poisFit$fitted.values
-X[X$method == "negb","N_GC"] = negbFit$fitted.values
+X[X$method == "Poisson","N_GC"] = poisFit$fitted.values
+X[X$method == "NB","N_GC"] = negbFit$fitted.values
 #X[X$method == "trunnegb","N_GC"] = predict(trunFit, type="response")
-ggplot(X, aes(x = MBH,y=N_GC,linetype=method)) + 
+ggplot(X, aes(x = MBH,y=N_GC)) + 
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
@@ -118,9 +129,9 @@ ggplot(X, aes(x = MBH,y=N_GC,linetype=method)) +
   theme(legend.position="right",plot.title = element_text(hjust=0.5),
         axis.title.y=element_text(vjust=0.75),
         axis.title.x=element_text(vjust=-0.25),
-        text = element_text(size=12))+
-   geom_point(aes(colour=method), data = subset(X, method=="obs")) + 
-   geom_line(aes(colour=method), data = subset(X, method != "obs"))+ylab(expression(N[GC]))+
+        text = element_text(size=10))+
+   geom_point(data = subset(X, method=="obs")) + 
+   geom_line(aes(colour=method,linetype=method), data = subset(X, method != "obs"))+ylab(expression(N[GC]))+
   xlab(expression(M[BH]))
 A = data.frame(linm=rep(NA,N))
 A$negb = A$pois = A$gauss= NA
