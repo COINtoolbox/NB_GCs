@@ -255,6 +255,19 @@ sum(negbFit$fitted.values)
 ```
 We could compute errors on these in the above bootstrap routine.
 
+# Dispersion statistics
+````{r}
+P_disp<-function(x){
+  pr<-sum(residuals(x,type="pearson")^2)  
+  dispersion<-pr/x$df.residual
+  cat("\n Pearson Chi2 = ",pr,
+      "\n Dispersion = ",dispersion, "\n")
+}
+P_disp(poisFit)
+P_disp(negbFit)
+
+````
+
 # Goodness of fit 
 Deviance is asymptotically chi squared:
 
