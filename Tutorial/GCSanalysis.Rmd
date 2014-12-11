@@ -14,6 +14,22 @@ It is put together in RStudio as a Rmd file from which a PDF is easily generated
 The catalog of Globular Cluster Systems (GCS) presented in Harris et al. 2013 is analyzed. In particular, three statistical models relating the number of GCSs to the dynamical mass of galaxies are studied. These include a linear model assuming gaussianity, and generalized linear models assuming poisson and negative binomial distributions.
 At the end the analysis is repeated using the black hole mass instead of the dynamical mass.
 
+
+# Before proceding some useful libraries are loaded.
+``` {r, results='hide',message=FALSE, cache=FALSE}
+library(ggplot2)
+library(MASS)     # glm.nb
+library(COUNT)   # diagnostics
+library(lmtest) # Likelihood test
+library(gamlss.tr)# zero truncated model
+#library(glmmADMB)  # GLMM
+library(caret) # 10-fold
+library(reshape) # melt
+library(scales)
+require(ggthemes)
+```
+
+
 # Data
 The data set 'GCs.csv' sent by e-mail by Rafael on Dec 1st is used.
 ``` {r Read data}
@@ -29,19 +45,20 @@ GCS$w = 1/ GCS$N_GC_err
 It is somewhat strange that in the catalogue the GCS count is not always integer; an integer version is derived here simply by rounding.
 * NOTE: in Rafas file these are integer! *
 
-Before proceding some useful libraries are loaded.
-``` {r, results='hide',message=FALSE, cache=FALSE}
-library(ggplot2)
-library(MASS)     # glm.nb
-library(COUNT)   # diagnostics
-library(lmtest) # Likelihood test
-library(gamlss.tr)# zero truncated model
-#library(glmmADMB)  # GLMM
-library(caret) # 10-fold
-library(reshape) # melt
-library(scales)
-require(ggthemes)
-```
+
+# Data exploration
+
+```{r,fig.width=7, fig.height=6}
+
+ggplot(GCS,aes(x=MBH,y=N_GC,colour=Type))+geom_point(size=5)+
+scale_y_continuous(trans = 'log10',
+                     breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_tableau()+scale_shape_tableau()+
+  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  ylab(expression(N[GC]))+xlab(expression(M[BH]))
+````
+
 
 # Modeling
 The first way to model counts is using a linear model for the log counts. The second is a glm poisson model, the third is a glm with negative binomial. These are specified and fitted as follows.
