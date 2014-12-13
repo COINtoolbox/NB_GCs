@@ -50,11 +50,11 @@ It is somewhat strange that in the catalogue the GCS count is not always integer
 
 ```{r,fig.width=7, fig.height=6}
 
-ggplot(GCS,aes(x=MBH,y=N_GC,colour=Type))+geom_point(size=5)+
+ggplot(GCS,aes(x=MBH,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
 scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_tableau()+scale_shape_tableau()+
+  scale_colour_tableau()+scale_shape_tremmel()+
   theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   ylab(expression(N[GC]))+xlab(expression(M[BH]))
 ````
