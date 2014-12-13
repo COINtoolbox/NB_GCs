@@ -321,7 +321,7 @@ P_disp(negbFit)
 
 # Average Marginal effects
 
-The number of GCs increases on average X times  given each additional increase of the predictor variable (case black hole mass) by ab unit factor (1 dex in this case).
+How the probability of the count response changes with a one-unit change in the value of the continuous predictor. 
 
 ```{r}
 mMBHmean<-mean(GCS$MBH)
