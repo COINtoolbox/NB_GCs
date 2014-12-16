@@ -319,13 +319,13 @@ P_disp(negbFit)
 
 ````
 
-# Average Marginal effects
+# Marginal effects
 
 How the probability of the count response changes with a one-unit change in the value of the continuous predictor. 
 
 ```{r}
 mMBHmean<-mean(GCS$MBH)
-xb<-coef(negbFit)[1]+coef(negbFit)[2]
+xb<-coef(negbFit)[1]+coef(negbFit)[2]*mMBHmean
 dfdxb<-exp(xb)*coef(negbFit)[2]
 mean(dfdxb)
 ````
