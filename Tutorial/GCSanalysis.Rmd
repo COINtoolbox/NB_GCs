@@ -300,9 +300,11 @@ Modeling log counts as a linear model with gaussian error tends to lead to biase
 
 ``` {r}
 sum(GCS$N_GC)
-sum(exp(linmFit$fitted.values)) 
-sum(poisFit$fitted.values)
-sum(negbFit$fitted.values)
+(sum(exp(linmFit$fitted.values))- sum(GCS$N_GC))/sum(GCS$N_GC)
+(sum(poisFit$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+(sum(negbFit$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+
+
 ```
 We could compute errors on these in the above bootstrap routine.
 
@@ -316,6 +318,33 @@ P_disp<-function(x){
 }
 P_disp(poisFit)
 P_disp(negbFit)
+
+````
+
+# Z-Score test
+
+```{r}
+obs<-nrow(GCS)
+mu <-predict(poisFit , type="response")
+mmu<-mean(mu)
+nybar<-obs*mmu
+musq<-mu*mu
+mu2<-mean(musq)*obs
+chival<-(mu2-nybar)^2/(2*mu2)
+chival
+pchisq(chival,1,lower.tail=FALSE)
+
+
+
+obs<-nrow(GCS)
+mu <-predict(negbFit , type="response")
+mmu<-mean(GCS$N_GC)
+nybar<-obs*mmu
+musq<-mu*mu
+mu2<-mean(musq)*obs
+chival<-(mu2-nybar)^2/(2*mu2)
+chival
+pchisq(chival,1,lower.tail=FALSE)
 
 ````
 
@@ -339,6 +368,17 @@ Deviance is asymptotically chi squared:
  1 - pchisq(summary(negbFit)$deviance,summary(negbFit)$df.residual)
 ````
 The Poisson model is not good. The other two are not rejected based on the deviance assessment. Note that the sample is rather small so care must be taken with asymptotics.
+
+# Best predictor via AIC or BIC
+````{r}
+neg1<-glm.nb(N_GC ~ MBH, GCS)
+neg2<-glm.nb(N_GC ~ Mdyn, GCS)
+neg3<-glm.nb(N_GC ~ Re, GCS)
+neg4<-glm.nb(N_GC ~ sig_e, GCS)
+lrtest(neg1,neg2) 
+drop1(neg1)
+```
+
 
 # References
 

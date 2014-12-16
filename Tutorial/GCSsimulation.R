@@ -9,6 +9,7 @@
 
 library(ggplot2)
 library(MASS)
+library(ggthemes)
 
 ### Generate 3 data sets #######################################################
 n = 200
@@ -149,7 +150,8 @@ ggplot(D, aes(x=x, y=count)) +
   geom_point(alpha=0.5) + 
   geom_line(aes(x=x, y=exp(yhat)), colour="blue") + 
   geom_ribbon(aes(ymin=exp(lwr), ymax=exp(upr)), alpha=0.3, fill="blue") +
-  facet_grid(dgm ~ fit)
+  facet_grid(dgm ~ fit)+
+  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")
 
 ### Bias diagnostic ############################################################
 A = aggregate(D$count, by = list(D$dgm, D$fit), FUN = sum)
