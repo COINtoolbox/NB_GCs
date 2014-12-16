@@ -35,6 +35,7 @@ The data set 'GCs.csv' sent by e-mail by Rafael on Dec 1st is used.
 ``` {r Read data}
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
+
 dim(GCS)
 ```
 Of the initial 422 galaxies in the catalog, 45 are retained for which variables needed here are present. The errors are used further down. Weights are defined to be the inverse of the error.
@@ -151,7 +152,7 @@ ggplot(X, aes(x = MBH,y=N_GC)) +
    geom_line(aes(colour=method,linetype=method), data = subset(X, method != "obs"))+ylab(expression(N[GC]))+
   xlab(expression(log(M[BH]/M[Sun])))
 A = data.frame(linm=rep(NA,N))
-A$negb = A$pois = A$gauss= NA
+A$negb = A$pois = NA
 for (i in 1:N) {
    Gx = GCS[-i,]
    f1 = lm(log(N_GC) ~ MBH, Gx)
@@ -321,32 +322,6 @@ P_disp(negbFit)
 
 ````
 
-# Z-Score test
-
-```{r}
-obs<-nrow(GCS)
-mu <-predict(poisFit , type="response")
-mmu<-mean(mu)
-nybar<-obs*mmu
-musq<-mu*mu
-mu2<-mean(musq)*obs
-chival<-(mu2-nybar)^2/(2*mu2)
-chival
-pchisq(chival,1,lower.tail=FALSE)
-
-
-
-obs<-nrow(GCS)
-mu <-predict(negbFit , type="response")
-mmu<-mean(GCS$N_GC)
-nybar<-obs*mmu
-musq<-mu*mu
-mu2<-mean(musq)*obs
-chival<-(mu2-nybar)^2/(2*mu2)
-chival
-pchisq(chival,1,lower.tail=FALSE)
-
-````
 
 # Marginal effects
 
@@ -369,14 +344,31 @@ Deviance is asymptotically chi squared:
 ````
 The Poisson model is not good. The other two are not rejected based on the deviance assessment. Note that the sample is rather small so care must be taken with asymptotics.
 
-# Best predictor via AIC or BIC
+# Best predictor 
 ````{r}
 neg1<-glm.nb(N_GC ~ MBH, GCS)
 neg2<-glm.nb(N_GC ~ Mdyn, GCS)
 neg3<-glm.nb(N_GC ~ Re, GCS)
 neg4<-glm.nb(N_GC ~ sig_e, GCS)
-lrtest(neg1,neg2) 
-drop1(neg1)
+
+
+modelfit(neg1)
+modelfit(neg2)
+
+P_disp(neg1)
+P_disp(neg2)
+P_disp(neg3)
+P_disp(neg4)
+
+(sum(neg1$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+(sum(neg2$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+(sum(neg3$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+(sum(neg4$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
+
+
+
+
+
 ```
 
 
