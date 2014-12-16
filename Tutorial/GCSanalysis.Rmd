@@ -35,7 +35,6 @@ The data set 'GCs.csv' sent by e-mail by Rafael on Dec 1st is used.
 ``` {r Read data}
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
-
 dim(GCS)
 ```
 Of the initial 422 galaxies in the catalog, 45 are retained for which variables needed here are present. The errors are used further down. Weights are defined to be the inverse of the error.
@@ -346,7 +345,7 @@ The Poisson model is not good. The other two are not rejected based on the devia
 
 # Best predictor 
 ````{r}
-neg1<-glm.nb(N_GC ~ MBH, GCS)
+neg1<-glm.nb(N_GC ~ MBH+Type, GCS)
 neg2<-glm.nb(N_GC ~ Mdyn, GCS)
 neg3<-glm.nb(N_GC ~ Re, GCS)
 neg4<-glm.nb(N_GC ~ sig_e, GCS)
@@ -364,11 +363,6 @@ P_disp(neg4)
 (sum(neg2$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
 (sum(neg3$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
 (sum(neg4$fitted.values)- sum(GCS$N_GC))/sum(GCS$N_GC)
-
-
-
-
-
 ```
 
 
