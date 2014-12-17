@@ -227,7 +227,8 @@ qlwr = 0.025
 qupr = 0.975
 for (i in 1:bN) {
   G = GCS[sample(1:N, N, replace = TRUE),]
-  linmFit = glm(log(N_GC) ~ MBH, G, family="gaussian")
+#  linmFit = glm(log(N_GC) ~ MBH, G, family="gaussian")
+  linmFit = lm(log(N_GC) ~ MBH, G)
   poisFit = glm(N_GC ~ MBH, G, family="poisson")
   negbFit = glm.nb(N_GC ~ MBH, G)
   linmP = predict(linmFit, MBHx)
@@ -284,6 +285,7 @@ ggplot(GCS, aes(x = MBH, y = logN_GC)) +
         axis.title.y=element_text(vjust=0.75),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=10))
+#+scale_y_continuous(breaks=c(10^0,10^1,10^2,10^3,10^4), labels=c(expression(10^0,10^1#,10^2,10^3,10^4)))
 ```
 
 Consider coverage.
