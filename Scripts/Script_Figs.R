@@ -73,7 +73,7 @@ ggplot(GCS,aes(x=sig_e,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_tableau()+scale_shape_tremmel()+
+  scale_colour_gdocs()+scale_shape_tremmel()+
   theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   ylab(expression(N[GC]))+
   xlab(expression(sigma~(km/s)))+theme(plot.title = element_text(hjust=0.5),
@@ -88,7 +88,7 @@ ggplot(GCS,aes(x=Re,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_tableau()+scale_shape_tremmel()+
+  scale_colour_gdocs()+scale_shape_tremmel()+
   theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   ylab(expression(N[GC]))+
   xlab(expression(R[e]~(kpc)))+theme(plot.title = element_text(hjust=0.5),
@@ -100,11 +100,13 @@ dev.off()
 
 CairoPDF("MV.pdf",height=8,width=9,family="Symbol")
 ggplot(GCS,aes(x=MV_T,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
-  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
+  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.8)+
+  geom_errorbarh(aes(xmin=MV_T-GCS$err_MV_T,
+                     xmax=MV_T+GCS$err_MV_T),alpha=0.8)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_tableau()+scale_shape_tremmel()+
+  scale_colour_gdocs()+scale_shape_tremmel()+
   theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   ylab(expression(N[GC]))+
   xlab(expression(M[V]))+theme(plot.title = element_text(hjust=0.5),
@@ -120,7 +122,7 @@ ggplot(GCS,aes(x=MK,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_tableau()+scale_shape_tremmel()+
+  scale_colour_gdocs()+scale_shape_tremmel()+
   theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   ylab(expression(N[GC]))+
   xlab(expression(M[K]))+theme(plot.title = element_text(hjust=0.5),
