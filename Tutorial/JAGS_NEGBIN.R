@@ -1,3 +1,10 @@
+library(rjags)
+library(ggmcmc)
+library(ggplot2)
+library(ggthemes)
+library(pander)
+library(Cairo)
+
 # GLM Jags
 
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
@@ -18,7 +25,7 @@ jags.data<-list(
 k.bugs<-"model{
 # Priors for regression coefficients
 
-beta.0~dnorm(0,000001)
+beta.0~dnorm(0,0.000001)
 beta.1~dnorm(0,0.000001)
 # Likelihood function
 for (i in 1:N){
@@ -36,18 +43,18 @@ jags.m<-jags.model(
   data = jags.data, 
   inits = inits, 
   textConnection(k.bugs),
-  n.chains = 3,
+  n.chains = 4,
   n.adapt=1000
  
  )
 update(jags.m, 10000)
 samps <- coda.samples(jags.m, params, n.iter = 10000)
-plot(samps)
-gelman.diag(samps)
-
+summary(samps)
+ggs(samps)
+S1<-ggs(samps)
+S1$Parameter<-revalue(S1$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1])))
 
 # Negative Binomial version
-
 # run ML GLM to get initial values for jags
 
 k2.bugs<-"model{
@@ -74,14 +81,50 @@ jags.neg<-jags.model(
   data = jags.data, 
   inits = inits2, 
   textConnection(k2.bugs),
-  n.chains = 3,
+  n.chains = 4,
   n.adapt=1000
   
 )
 update(jags.neg, 10000)
-samps2 <- coda.samples(jags.neg, params, n.iter = 50000)
+samps2 <- jags.samples(jags.neg, params, n.iter = 10000)
 plot(samps2)
 gelman.diag(samps2)
+S2<-ggs(samps2)
 
 
+library(plyr)
+S2$Parameter<-revalue(S2$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
+              "size"="k"))
+
+
+# Plot 
+CairoPDF("chain1.pdf")
+ggs_traceplot(S1)+
+  scale_colour_gdocs()+theme_pander(base_size = 15,nomargin = F)+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  ylab("Value")+
+  xlab("Iteration")+theme(plot.background = element_rect(fill = 'white', colour = 'white'),
+                          legend.position="none",plot.title = element_text(hjust=0.5),
+                          axis.title.y=element_text(vjust=0.75),
+                          axis.title.x=element_text(vjust=-0.25),
+                          text = element_text(size=25))+
+  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+dev.off()
+
+CairoPNG("chain2.png")
+ggs_traceplot(S2)+
+scale_colour_gdocs()+theme_pander(base_size = 15,nomargin = F)+
+#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  ylab("Value")+
+  xlab("Iteration")+theme(plot.background = element_rect(fill = 'white', colour = 'white'),
+                          legend.position="none",plot.title = element_text(hjust=0.5),
+                                       axis.title.y=element_text(vjust=0.75),
+                                       axis.title.x=element_text(vjust=-0.25),
+                                       text = element_text(size=25))+
+  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+dev.off()
+
+plot(samps)
+gelman.diag(samps)
+str(samps)
 

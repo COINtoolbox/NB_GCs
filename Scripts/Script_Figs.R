@@ -68,15 +68,16 @@ dev.off()
 CairoPDF("sig_e.pdf",height=8,width=9,family="Symbol")
 ggplot(GCS,aes(x=sig_e,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
   geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
-  geom_errorbarh(aes(xmin=sig_e-err_sig_e,
+  geom_errorbarh(guide="none",aes(xmin=sig_e-err_sig_e,
                      xmax=sig_e+err_sig_e),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+scale_shape_tremmel()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_pander(base_size = 25,nomargin = F)+
   ylab(expression(N[GC]))+
-  xlab(expression(sigma~(km/s)))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(sigma~(km/s)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
                                                 axis.title.x=element_text(vjust=-0.25),
                                                 text = element_text(size=25))
