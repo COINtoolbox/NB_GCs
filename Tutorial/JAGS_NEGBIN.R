@@ -52,7 +52,7 @@ gelman.diag(samps)
 
 k2.bugs<-"model{
 # Priors for regression coefficients
-beta.0~dnorm(0,000001)
+beta.0~dnorm(0,0.000001)
 beta.1~dnorm(0,0.000001)
 # Prior for size 
 size~dunif(0.001,5)
@@ -67,7 +67,7 @@ N_GC[i]~dnegbin(p[i],size)
 
 }"
 
-inits2<-list(beta.0=coefficients(glm.neg)[1],beta.1=coefficients(glm.neg)[2],size=runif(0.001,5))
+inits2<-list(beta.0=coefficients(glm.neg)[1],beta.1=coefficients(glm.neg)[2],size=0.1)
 params<-c("beta.0","beta.1","size")
 
 jags.neg<-jags.model(
