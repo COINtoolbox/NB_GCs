@@ -34,48 +34,50 @@ err_sig_e<-GCS$err_sig_e
 
 
 CairoPDF("MBH.pdf",height=8,width=9,family="Symbol")
-ggplot(GCS,aes(x=MBH,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
-  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.8)+
-  geom_errorbarh(aes(xmin=MBH-GCS$lowMBH,
-                     xmax=MBH+upMBH),alpha=0.8)+
+ggplot(GCS,aes(x=MBH,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
+  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(xmin=MBH-GCS$lowMBH,
+                     xmax=MBH+upMBH),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_stata()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(log~M[BH]/M['\u0298']))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                  axis.title.y=element_text(vjust=0.75),
                  axis.title.x=element_text(vjust=-0.25),
                  text = element_text(size=25))
 dev.off()
 
 CairoPDF("Mdyn.pdf",height=8,width=9)
-ggplot(GCS,aes(x=Mdyn,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
-  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.8)+
+ggplot(GCS,aes(x=Mdyn,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
+  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_tremmel()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  scale_colour_gdocs()+  
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(log~M[dyn]/M['\u0298']))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(log~M[dyn]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
                                                 axis.title.x=element_text(vjust=-0.25),
                                                 text = element_text(size=25))
 dev.off()
 
 CairoPDF("sig_e.pdf",height=8,width=9,family="Symbol")
-ggplot(GCS,aes(x=sig_e,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
+ggplot(GCS,aes(x=sig_e,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
   geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
   geom_errorbarh(guide="none",aes(xmin=sig_e-err_sig_e,
                      xmax=sig_e+err_sig_e),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_tremmel()+
-#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme_pander(base_size = 25,nomargin = F)+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
   xlab(expression(sigma~(km/s)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
@@ -84,15 +86,16 @@ ggplot(GCS,aes(x=sig_e,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
 dev.off()
 
 CairoPDF("Re.pdf",height=8,width=9,family="Symbol")
-ggplot(GCS,aes(x=Re,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
+ggplot(GCS,aes(x=Re,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
   geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_tremmel()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(R[e]~(kpc)))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(R[e]~(kpc)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                           axis.title.y=element_text(vjust=0.75),
                                           axis.title.x=element_text(vjust=-0.25),
                                           text = element_text(size=25))
@@ -100,17 +103,18 @@ dev.off()
 
 
 CairoPDF("MV.pdf",height=8,width=9,family="Symbol")
-ggplot(GCS,aes(x=MV_T,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
-  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.8)+
+ggplot(GCS,aes(x=MV_T,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
+  geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
   geom_errorbarh(aes(xmin=MV_T-GCS$err_MV_T,
-                     xmax=MV_T+GCS$err_MV_T),alpha=0.8)+
+                     xmax=MV_T+GCS$err_MV_T),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_tremmel()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(M[V]))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(M[V]))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                      axis.title.y=element_text(vjust=0.75),
                                      axis.title.x=element_text(vjust=-0.25),
                                      text = element_text(size=25))+
@@ -118,15 +122,16 @@ ggplot(GCS,aes(x=MV_T,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
 dev.off()
 
 CairoPDF("MK.pdf",height=8,width=9,family="Symbol")
-ggplot(GCS,aes(x=MK,y=N_GC,colour=Type,shape=Type))+geom_point(size=3)+
+ggplot(GCS,aes(x=MK,y=N_GC,colour=Type,shape=Type))+geom_point(size=3.25)+
   geom_errorbar(guide="none",aes(ymin=N_GC-N_err,ymax=N_GC+N_err),alpha=0.7)+
   scale_y_continuous(trans = 'log10',
                      breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+scale_shape_tremmel()+
-  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(M[K]))+theme(plot.title = element_text(hjust=0.5),
+  xlab(expression(M[K]))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                axis.title.y=element_text(vjust=0.75),
                                axis.title.x=element_text(vjust=-0.25),
                                text = element_text(size=25))+

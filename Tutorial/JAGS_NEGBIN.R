@@ -1,19 +1,51 @@
+#Poisson and NB regression using JAGS by Rafael S. de Souza
+
 library(rjags)
 library(ggmcmc)
 library(ggplot2)
 library(ggthemes)
 library(pander)
 library(Cairo)
+library(plyr)
+library(MASS)
+library(scales)
 
-# GLM Jags
+# Function to allow parse labels in facet_wrap
+facet_wrap_labeller <- function(gg.plot,labels=NULL) {
+  #works with R 3.0.1 and ggplot2 0.9.3.1
+  require(gridExtra)
+  
+  g <- ggplotGrob(gg.plot)
+  gg <- g$grobs      
+  strips <- grep("strip_t", names(gg))
+  
+  for(ii in seq_along(labels))  {
+    modgrob <- getGrob(gg[[strips[ii]]], "strip.text", 
+                       grep=TRUE, global=TRUE)
+    gg[[strips[ii]]]$children[[modgrob$name]] <- editGrob(modgrob,label=labels[ii])
+  }
+  
+  g$grobs <- gg
+  class(g) = c("arrange", "ggplot",class(g)) 
+  g
+}
+give.n <- function(x){
+  
+  return(c(y = 0.5, label = length(x))) 
+  # experiment with the multiplier to find the perfect position
+}
+################
+
+# Read data
 
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
 dim(GCS)
+N_err<-GCS$N_GC_err
+lowMBH<-GCS$lowMBH
+upMBH<-GCS$upMBH
+err_sig_e<-GCS$err_sig_e
 
-# run ML GLM to get initial values for jags
-glm.pois<-glm(N_GC ~ MBH, GCS, family="poisson")
-glm.neg<-glm.nb(N_GC ~ MBH, GCS)
 
 jags.data<-list(
   N_GC = GCS$N_GC,
@@ -21,8 +53,9 @@ jags.data<-list(
   N = nrow(GCS)
   )
 
-# Poisson version
-k.bugs<-"model{
+# Poisson model
+
+model.pois<-"model{
 # Priors for regression coefficients
 
 beta.0~dnorm(0,0.000001)
@@ -32,32 +65,101 @@ for (i in 1:N){
 eta[i]<-beta.0+beta.1*MBH[i]
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
 N_GC[i]~dpois(mu[i])
+# Prediction
+prediction.pois[i]~dpois(mu[i])
 }
 
 }"
 
-inits<-list(beta.0=coefficients(glm.pois)[1],beta.1=coefficients(glm.pois)[2])
-params<-c("beta.0","beta.1")
+#inits<-list(beta.0=coefficients(glm.pois)[1],beta.1=coefficients(glm.pois)[2])
+inits<-list(beta.0=0,beta.1=0)
 
-jags.m<-jags.model(
+params<-c("beta.0","beta.1","prediction.pois")
+
+jags.pois<-jags.model(
   data = jags.data, 
   inits = inits, 
-  textConnection(k.bugs),
-  n.chains = 4,
+  textConnection(model.pois),
+  n.chains = 3,
   n.adapt=1000
  
  )
-update(jags.m, 10000)
-samps <- coda.samples(jags.m, params, n.iter = 10000)
-summary(samps)
-ggs(samps)
-S1<-ggs(samps)
-S1$Parameter<-revalue(S1$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1])))
+update(jags.pois, 20000)
+posterior.pois <- coda.samples(jags.pois, params, n.iter = 50000)
+
+pred.pois<-summary(as.mcmc.list(jags.samples(jags.pois, params, n.iter = 50000)$prediction.pois),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+pred.pois2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.pois$quantiles[,4],lwr1=pred.pois$quantiles[,3],lwr2=pred.pois$quantiles[,2],lwr3=pred.pois$quantiles[,1],upr1=pred.pois$quantiles[,5],upr2=pred.pois$quantiles[,6],upr3=pred.pois$quantiles[,7])
+
+CairoPDF("JAGS_pois.pdf",height=8,width=9)
+ggplot(pred.pois2,aes(x=MBH,y=NGC))+
+  geom_ribbon(aes(ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                axis.title.y=element_text(vjust=0.75),
+                                                axis.title.x=element_text(vjust=-0.25),
+                                                text = element_text(size=25))
+dev.off()
+
+
+
+S.pois<-ggs(posterior.pois,family="beta")
+S.pois$Parameter<-revalue(S.pois$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1])))
+
+
+# Plot 
+
+g0<-ggs_traceplot(S.pois)+
+  scale_colour_economist()+
+#  theme_pander(base_size = 20,nomargin = F)+
+  theme_hc()+scale_alpha_manual(values=c(0.3,0.3,0.3))+
+  geom_line(alpha=0.5)+scale_linetype_manual(values=c("solid","dotted","dashed"))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  ylab("Parameter value")+
+  xlab("Iteration")+theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+                          legend.position="none",plot.title = element_text(hjust=0.5),
+                          axis.title.y=element_text(vjust=0.75),
+                          axis.title.x=element_text(vjust=-0.25),
+                          text = element_text(size=25))+
+  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+
+CairoPDF("chain_poisson.pdf",height=10,width=8)
+g0 
+dev.off()
+
+
+g1<-ggs_density(S.pois)+
+  scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+CairoPDF("posterior_poisson.pdf",height=10,width=8)
+facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1])))
+dev.off()
+
 
 # Negative Binomial version
-# run ML GLM to get initial values for jags
 
-k2.bugs<-"model{
+
+model.NB<-"model{
 # Priors for regression coefficients
 beta.0~dnorm(0,0.000001)
 beta.1~dnorm(0,0.000001)
@@ -70,61 +172,98 @@ eta[i]<-beta.0+beta.1*MBH[i]
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
 p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
+# Prediction
+prediction.NB[i]~dnegbin(p[i],size)
 }
 
 }"
 
-inits2<-list(beta.0=coefficients(glm.neg)[1],beta.1=coefficients(glm.neg)[2],size=0.1)
-params<-c("beta.0","beta.1","size")
+inits2<-list(beta.0=0,beta.1=0,size=0.1)
+params2<-c("beta.0","beta.1","size","prediction.NB")
 
 jags.neg<-jags.model(
   data = jags.data, 
   inits = inits2, 
-  textConnection(k2.bugs),
-  n.chains = 4,
+  textConnection(model.NB),
+  n.chains = 3,
   n.adapt=1000
   
 )
-update(jags.neg, 10000)
-samps2 <- jags.samples(jags.neg, params, n.iter = 10000)
-plot(samps2)
-gelman.diag(samps2)
-S2<-ggs(samps2)
+update(jags.neg, 20000)
+posterior.NB <- coda.samples(jags.neg, params2, n.iter = 50000)
+pred.NB<-summary(as.mcmc.list(jags.samples(jags.neg, params2, n.iter = 50000)$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+
+pred.NB2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.NB$quantiles[,4],lwr1=pred.NB$quantiles[,3],lwr2=pred.NB$quantiles[,2],lwr3=pred.NB$quantiles[,1],upr1=pred.NB$quantiles[,5],upr2=pred.NB$quantiles[,6],upr3=pred.NB$quantiles[,7])
 
 
-library(plyr)
-S2$Parameter<-revalue(S2$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
+
+CairoPDF("JAGS_NB.pdf",height=8,width=9)
+ggplot(pred.NB2,aes(x=MBH,y=NGC))+
+  geom_ribbon(aes(ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+                     xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+ labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                axis.title.y=element_text(vjust=0.75),
+                                                axis.title.x=element_text(vjust=-0.25),
+                                                text = element_text(size=25))
+dev.off()
+
+
+gelman.diag(posterior.NB)
+S.NB1<-ggs(posterior.NB,family=c("beta"))
+S.NB2<-ggs(posterior.NB,family=c("size"))
+S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
+S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
               "size"="k"))
 
 
-# Plot 
-CairoPDF("chain1.pdf")
-ggs_traceplot(S1)+
-  scale_colour_gdocs()+theme_pander(base_size = 15,nomargin = F)+
+p0<-ggs_traceplot(S.NB)+
+  scale_colour_economist()+
+  #  theme_pander(base_size = 20,nomargin = F)+
+  theme_hc()+scale_alpha_manual(values=c(0.3,0.3,0.3))+
+  geom_line(alpha=0.5)+scale_linetype_manual(values=c("solid","dotted","dashed"))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  ylab("Value")+
-  xlab("Iteration")+theme(plot.background = element_rect(fill = 'white', colour = 'white'),
+  ylab("Parameter value")+
+  xlab("Iteration")+theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
                           legend.position="none",plot.title = element_text(hjust=0.5),
                           axis.title.y=element_text(vjust=0.75),
                           axis.title.x=element_text(vjust=-0.25),
                           text = element_text(size=25))+
   facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+
+CairoPDF("chain_NB",height=10,width=8)
+p0
+#facet_wrap_labeller(p0,labels=c(expression(beta[0]),expression(beta[1]))) 
 dev.off()
 
-CairoPNG("chain2.png")
-ggs_traceplot(S2)+
-scale_colour_gdocs()+theme_pander(base_size = 15,nomargin = F)+
-#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  ylab("Value")+
-  xlab("Iteration")+theme(plot.background = element_rect(fill = 'white', colour = 'white'),
-                          legend.position="none",plot.title = element_text(hjust=0.5),
-                                       axis.title.y=element_text(vjust=0.75),
-                                       axis.title.x=element_text(vjust=-0.25),
-                                       text = element_text(size=25))+
-  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+p1<-ggs_density(S.NB)+
+  scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+CairoPDF("posterior_NB.pdf",height=10,width=8)
+facet_wrap_labeller(p1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
-plot(samps)
-gelman.diag(samps)
-str(samps)
+
+
+
 
