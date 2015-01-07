@@ -21,7 +21,7 @@ library(ggplot2)
 library(MASS)     # glm.nb
 library(COUNT)   # diagnostics
 library(lmtest) # Likelihood test
-library(gamlss.tr)# zero truncated model
+#library(gamlss.tr)# zero truncated model
 #library(glmmADMB)  # GLMM
 library(caret) # 10-fold
 library(reshape) # melt
@@ -288,6 +288,10 @@ ggplot(GCS, aes(x = MBH, y = logN_GC)) +
 #+scale_y_continuous(breaks=c(10^0,10^1,10^2,10^3,10^4), labels=c(expression(10^0,10^1#,10^2,10^3,10^4)))
 ```
 
+
+
+
+
 Consider coverage.
 ``` {r}
 P$obs = rep(GCS$logN_GC,3)
@@ -308,6 +312,92 @@ sum(GCS$N_GC)
 
 
 ```
+
+## Prediction (original units)
+
+The above computes a confidence interval. Following code is an attempt to compute prediction intervals: taking into account variance of estimated parameters through bootstrap, and prediction uncertainty due to model variance.
+
+``` {r, cache = TRUE}
+N = nrow(GCS)
+# predN = 50
+# MBHx = data.frame(MBH = seq(from = 0.9 * min(GCS$MBH), 
+#                             to = 1.1 * max(GCS$MBH), 
+#                             length.out = predN))
+# Do the following instead, to enable calculation of coverage.
+MBHx = data.frame(MBH = GCS$MBH)
+predN = length(GCS$MBH)
+bN = 1000
+Blinm = Bpois = Bnegb = matrix(data = NA, nrow = bN, ncol = predN)
+BlinmU = BlinmL = BpoisU = BpoisL = BnegbU = BnegbL = Blinm
+qlwr = 0.025
+qupr = 0.975
+for (i in 1:bN) {
+  G = GCS[sample(1:N, N, replace = TRUE),]
+#  linmFit = glm(log(N_GC) ~ MBH, G, family="gaussian")
+  linmFit = lm(log(N_GC) ~ MBH, G)
+  poisFit = glm(N_GC ~ MBH, G, family="poisson")
+  negbFit = glm.nb(N_GC ~ MBH, G)
+  linmP = predict(linmFit, MBHx)
+  poisP = predict(poisFit, MBHx)
+  negbP = predict(negbFit, MBHx)
+  Blinm[i,] = linmP
+  BlinmL[i,] = exp(qnorm(qlwr, mean = linmP, sd = sd(residuals(linmFit))))
+  BlinmU[i,] = exp(qnorm(qupr, mean = linmP, sd = sd(residuals(linmFit))))
+  Bpois[i,] = poisP
+  BpoisL[i,] = qpois(qlwr, lambda = exp(poisP))
+  BpoisU[i,] = qpois(qupr, lambda = exp(poisP))
+  Bnegb[i,] = negbP
+  BnegbL[i,] = qnbinom(qlwr, size = negbFit$theta, mu = exp(negbP))
+  BnegbU[i,] = qnbinom(qupr, size = negbFit$theta, mu = exp(negbP))
+} 
+
+# fit once more, on the full sample, as a reference:
+linmFit = glm(log(N_GC) ~ MBH, GCS, family="gaussian")
+poisFit = glm(N_GC ~ MBH, GCS, family="poisson")
+negbFit = glm.nb(N_GC ~ MBH, GCS)
+linmPred = predict(linmFit, MBHx,type="response")
+poisPred = predict(poisFit, MBHx,type="response")
+negbPred = predict(negbFit, MBHx,type="response")
+
+# Compare bootstrap means with reference to check validity of bootstrap:
+summary(colMeans(Blinm) - linmPred)
+summary(colMeans(Bpois) - poisPred)
+summary(colMeans(Bnegb) - negbPred)
+
+# Now plot predicted means and prediction intervals
+P = MBHx
+P$linm = exp(linmPred)
+P$pois = poisPred
+P$negb = negbPred
+P = melt(P, id.vars = "MBH", variable_name = "model")
+names(P)[3] = "logN_GC"
+P$lwr = c(colMeans(BlinmL), colMeans(BpoisL), colMeans(BnegbL))
+P$upr = c(colMeans(BlinmU), colMeans(BpoisU), colMeans(BnegbU))
+```
+
+```{r,fig.width=6, fig.height=9}
+GCS$logN_GC = GCS$N_GC
+ggplot(GCS, aes(x = MBH, y = logN_GC)) + 
+#  scale_y_continuous(trans = 'log10',
+#                     breaks=trans_breaks("log10",function(x) 10^x),
+#                     labels=trans_format("log10",math_format(10^.x)))+
+  geom_point() + 
+  geom_line(data=P, aes(x = MBH, y=logN_GC, colour=model)) +  
+  geom_ribbon(data=P, aes(ymin=lwr, ymax=upr, fill=model), alpha=0.5) + 
+  facet_wrap(~ model, ncol=1)+scale_color_tableau()+scale_linetype_stata()+
+  scale_fill_tableau()+
+  theme_economist_white(gray_bg = T, base_size = 10, base_family = "sans")+
+  theme(legend.text=element_text(size=8),legend.position="right",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=10))+
+    scale_y_continuous(trans = 'log10',
+                     breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))
+```
+
+
+
 We could compute errors on these in the above bootstrap routine.
 
 # Dispersion statistics
@@ -347,8 +437,8 @@ The Poisson model is not good. The other two are not rejected based on the devia
 
 # Best predictor 
 ````{r}
-neg1<-glm.nb(N_GC ~ MBH+Type, GCS)
-neg2<-glm.nb(N_GC ~ Mdyn, GCS)
+neg1<-glm.nb(N_GC ~ MBH, GCS)
+neg2<-glm.nb(N_GC ~ Mdyn+MV_T, GCS)
 neg3<-glm.nb(N_GC ~ Re, GCS)
 neg4<-glm.nb(N_GC ~ sig_e, GCS)
 

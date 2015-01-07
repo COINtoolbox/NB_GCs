@@ -263,7 +263,9 @@ CairoPDF("posterior_NB.pdf",height=10,width=8)
 facet_wrap_labeller(p1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
+ggs_ppmean(ggs(posterior.NB,family=c("prediction")),  outcome=GCS$N_GC)
 
 
+ggs_ppsd(ggs(posterior.NB,family=c("prediction")),  outcome=GCS$N_GC)
 
 
