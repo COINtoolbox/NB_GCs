@@ -86,9 +86,13 @@ jags.pois<-jags.model(
  )
 update(jags.pois, 20000)
 posterior.pois <- coda.samples(jags.pois, params, n.iter = 50000)
-
-pred.pois<-summary(as.mcmc.list(jags.samples(jags.pois, params, n.iter = 50000)$prediction.pois),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+jagssamples <- jags.samples(jags.pois, params, n.iter = 50000)
+pred.pois<-summary(as.mcmc.list(jagssamples$prediction.pois),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.pois2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.pois$quantiles[,4],lwr1=pred.pois$quantiles[,3],lwr2=pred.pois$quantiles[,2],lwr3=pred.pois$quantiles[,1],upr1=pred.pois$quantiles[,5],upr2=pred.pois$quantiles[,6],upr3=pred.pois$quantiles[,7])
+
+# Posterior means of beta for comparison with ML estimates
+summary(as.mcmc.list(jagssamples$beta.0))
+summary(as.mcmc.list(jagssamples$beta.1))
 
 CairoPDF("JAGS_pois.pdf",height=8,width=9)
 ggplot(pred.pois2,aes(x=MBH,y=NGC))+
@@ -191,11 +195,14 @@ jags.neg<-jags.model(
 )
 update(jags.neg, 20000)
 posterior.NB <- coda.samples(jags.neg, params2, n.iter = 50000)
-pred.NB<-summary(as.mcmc.list(jags.samples(jags.neg, params2, n.iter = 50000)$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+jagssamples.nb <- jags.samples(jags.neg, params2, n.iter = 50000)
+pred.NB<-summary(as.mcmc.list(jagssamples.nb$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 
 pred.NB2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.NB$quantiles[,4],lwr1=pred.NB$quantiles[,3],lwr2=pred.NB$quantiles[,2],lwr3=pred.NB$quantiles[,1],upr1=pred.NB$quantiles[,5],upr2=pred.NB$quantiles[,6],upr3=pred.NB$quantiles[,7])
 
-
+# Posterior means of beta for comparison with ML estimates
+summary(as.mcmc.list(jagssamples.nb$beta.0))
+summary(as.mcmc.list(jagssamples.nb$beta.1))
 
 CairoPDF("JAGS_NB.pdf",height=8,width=9)
 ggplot(pred.NB2,aes(x=MBH,y=NGC))+
