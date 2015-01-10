@@ -275,4 +275,48 @@ ggs_ppmean(ggs(posterior.NB,family=c("prediction")),  outcome=GCS$N_GC)
 
 ggs_ppsd(ggs(posterior.NB,family=c("prediction")),  outcome=GCS$N_GC)
 
+######## NB with errors ########################################################
+
+jags.data3 <- list(
+  N_GC = GCS$N_GC,
+  MBH = GCS$MBH,
+  errN_GC = GCS$N_GC_err,
+  N = nrow(GCS)
+)
+
+model.NB <- "model{
+  # Priors for regression coefficients
+  beta.0~dnorm(0,0.000001)
+  beta.1~dnorm(0,0.000001)
+  # Prior for size 
+  size~dunif(0.001,5)
+  # Likelihood function
+  for (i in 1:N){
+    errorN[i]~dbin(0.5,2*errN_GC[i])
+    eta[i]<-beta.0+beta.1*MBH[i]+exp(errorN[i]-errN_GC[i])
+    log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
+    p[i]<-size/(size+mu[i])
+    N_GC[i]~dnegbin(p[i],size)
+    # Prediction
+    prediction.NB[i]~dnegbin(p[i],size)
+  }
+}"
+
+inits3 <- list(beta.0=0,beta.1=0,size=0.1)
+params3 <- c("beta.0","beta.1","size","prediction.NB")
+
+jags.neg3 <- jags.model(
+  data = jags.data3, 
+  inits = inits3, 
+  textConnection(model.NB),
+  n.chains = 3,
+  n.adapt=1000
+)
+
+update(jags.neg, 20000)
+jagssamples.nb3 <- jags.samples(jags.neg, params3, n.iter = 50000)
+
+summary(as.mcmc.list(jagssamples.nb3$beta.0))
+summary(as.mcmc.list(jagssamples.nb3$beta.1))
+
 
