@@ -51,7 +51,7 @@ jags.data<-list(
   N_GC = GCS$N_GC,
   MBH = GCS$MBH,
   N = nrow(GCS)
-  )
+)
 
 # Poisson model
 
@@ -82,8 +82,8 @@ jags.pois<-jags.model(
   textConnection(model.pois),
   n.chains = 3,
   n.adapt=1000
- 
- )
+  
+)
 update(jags.pois, 20000)
 posterior.pois <- coda.samples(jags.pois, params, n.iter = 50000)
 jagssamples <- jags.samples(jags.pois, params, n.iter = 50000)
@@ -127,7 +127,7 @@ S.pois$Parameter<-revalue(S.pois$Parameter, c("beta.0"=expression(beta[0]), "bet
 
 g0<-ggs_traceplot(S.pois)+
   scale_colour_economist()+
-#  theme_pander(base_size = 20,nomargin = F)+
+  #  theme_pander(base_size = 20,nomargin = F)+
   theme_hc()+scale_alpha_manual(values=c(0.3,0.3,0.3))+
   geom_line(alpha=0.5)+scale_linetype_manual(values=c("solid","dotted","dashed"))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
@@ -212,13 +212,13 @@ ggplot(pred.NB2,aes(x=MBH,y=NGC))+
   geom_point(aes(colour=Type,shape=Type),size=3.25)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-                     xmax=MBH+upMBH),alpha=0.7)+
+                                  xmax=MBH+upMBH),alpha=0.7)+
   geom_line(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
- labels=trans_format("log10",math_format(10^.x)))+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
   scale_shape_manual(values=c(19,2,8))+
-#  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
   xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
@@ -233,7 +233,7 @@ S.NB1<-ggs(posterior.NB,family=c("beta"))
 S.NB2<-ggs(posterior.NB,family=c("size"))
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
-              "size"="k"))
+                                          "size"="k"))
 
 
 p0<-ggs_traceplot(S.NB)+
@@ -285,21 +285,21 @@ jags.data3 <- list(
 )
 
 model.NB <- "model{
-  # Priors for regression coefficients
-  beta.0~dnorm(0,0.000001)
-  beta.1~dnorm(0,0.000001)
-  # Prior for size 
-  size~dunif(0.001,5)
-  # Likelihood function
-  for (i in 1:N){
-    errorN[i]~dbin(0.5,2*errN_GC[i])
-    eta[i]<-beta.0+beta.1*MBH[i]+exp(errorN[i]-errN_GC[i])
-    log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
-    p[i]<-size/(size+mu[i])
-    N_GC[i]~dnegbin(p[i],size)
-    # Prediction
-    prediction.NB[i]~dnegbin(p[i],size)
-  }
+# Priors for regression coefficients
+beta.0~dnorm(0,0.000001)
+beta.1~dnorm(0,0.000001)
+# Prior for size 
+size~dunif(0.001,5)
+# Likelihood function
+for (i in 1:N){
+errorN[i]~dbin(0.5,2*errN_GC[i])
+eta[i]<-beta.0+beta.1*MBH[i]+exp(errorN[i]-errN_GC[i])
+log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
+p[i]<-size/(size+mu[i])
+N_GC[i]~dnegbin(p[i],size)
+# Prediction
+prediction.NB[i]~dnegbin(p[i],size)
+}
 }"
 
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
@@ -313,10 +313,10 @@ jags.neg3 <- jags.model(
   n.adapt=1000
 )
 
-update(jags.neg, 20000)
-jagssamples.nb3 <- jags.samples(jags.neg, params3, n.iter = 50000)
+update(jags.neg3, 20000)
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
-
+summary(as.mcmc.list(jagssamples.nb3$size))
 
