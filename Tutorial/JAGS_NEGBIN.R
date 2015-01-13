@@ -300,23 +300,6 @@ N_GC[i]~dnegbin(p[i],size)
 # Prediction
 prediction.NB[i]~dnegbin(p[i],size)
 }
-=======
-  # Priors for regression coefficients
-  beta.0~dnorm(0,0.000001)
-  beta.1~dnorm(0,0.000001)
-  # Prior for size 
-  size~dunif(0.001,5)
-  # Likelihood function
-  for (i in 1:N){
-    errorN[i]~dbin(0.5,2*errN_GC[i])
-    eta[i]<-beta.0+beta.1*MBH[i]+exp(errorN[i]-errN_GC[i])
-    log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
-    p[i]<-size/(size+mu[i])
-    N_GC[i]~dnegbin(p[i],size)
-    # Prediction
-   
-    prediction.NB[i]~dnegbin(p[i],size)
-  }
 }"
 
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
