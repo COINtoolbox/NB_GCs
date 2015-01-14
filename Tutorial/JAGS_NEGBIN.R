@@ -281,7 +281,8 @@ jags.data3 <- list(
   N_GC = GCS$N_GC,
   MBH = GCS$MBH,
   errN_GC = GCS$N_GC_err,
-  N = nrow(GCS)
+  N = nrow(GCS),
+  errMBH = upMBH
 )
 
 model.NB <- "model{
@@ -292,8 +293,9 @@ beta.1~dnorm(0,0.000001)
 size~dunif(0.001,5)
 # Likelihood function
 for (i in 1:N){
+MBHtrue[i]~dnorm(MBH[i],1/errMBH[i]^2);
 errorN[i]~dbin(0.5,2*errN_GC[i])
-eta[i]<-beta.0+beta.1*MBH[i]+exp(errorN[i]-errN_GC[i])
+eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
 p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
@@ -303,7 +305,7 @@ prediction.NB[i]~dnegbin(p[i],size)
 }"
 
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB")
+params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 jags.neg3 <- jags.model(
   data = jags.data3, 
@@ -313,24 +315,20 @@ jags.neg3 <- jags.model(
   n.adapt=1000
 )
 
-update(jags.neg3, 20000)
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
+update(jags.neg3, 25000)
+
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 100000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 150000)
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
 summary(as.mcmc.list(jagssamples.nb3$size))
-=======
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 100000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 100000)
 
-summary(as.mcmc.list(jagssamples.nb3$beta.0))
-summary(as.mcmc.list(jagssamples.nb3$beta.1))
-
+MBHtrue<-summary(as.mcmc.list(jags.samples(jags.neg3, params3, n.iter = 50000)$MBHtrue),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.NBerr$quantiles[,4],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 
-S.NB1<-ggs(codasamples.nb3,family=c("beta"))
+S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
