@@ -10,6 +10,7 @@ library(plyr)
 library(MASS)
 library(scales)
 
+
 # Function to allow parse labels in facet_wrap
 facet_wrap_labeller <- function(gg.plot,labels=NULL) {
   #works with R 3.0.1 and ggplot2 0.9.3.1
@@ -283,27 +284,75 @@ jags.data3 <- list(
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   errMBH = upMBH
+#  meanx = mean(GCS$MBH),
+#  varx = var (GCS$MBH) 
 )
 
-model.NB <- "model{
+#model.NB <- "model{
 # Priors for regression coefficients
-beta.0~dnorm(0,0.000001)
-beta.1~dnorm(0,0.000001)
+#beta.0~dnorm(0,0.000001)
+#beta.1~dnorm(0,0.000001)
 # Prior for size 
-size~dunif(0.001,5)
+#size~dunif(0.001,5)
 # Likelihood function
-for (i in 1:N){
-MBHtrue[i]~dnorm(MBH[i],1/errMBH[i]^2);
-errorN[i]~dbin(0.5,2*errN_GC[i])
-eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
-log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
-p[i]<-size/(size+mu[i])
-N_GC[i]~dnegbin(p[i],size)
+#for (i in 1:N){
+#MBHtrue[i]~dnorm(MBH[i],1/errMBH[i]^2);
+#errorN[i]~dbin(0.5,2*errN_GC[i])
+#eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
+#log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
+#p[i]<-size/(size+mu[i])
+#N_GC[i]~dnegbin(p[i],size)
 # Prediction
+#prediction.NB[i]~dnegbin(p[i],size)
+#}
+#}"
+
+model.NB <- "model{
+
+# Priors for regression coefficients
+
+beta.0~dnorm(0,0.000001)
+
+beta.1~dnorm(0,0.000001)
+
+# Prior for size
+
+size~dunif(0.001,5)
+
+# Hyperpriors
+
+meanx ~ dgamma(30,3)
+varx ~ dgamma(2,1)
+
+for (i in 1:N){
+
+#MBHtrue[i]~dunif(5,12)
+
+# MBHtrue[i]~dnorm(8,0.000001) # this would be sensible too
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
+}
+
+# Likelihood function
+
+for (i in 1:N){
+
+MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
+
+errorN[i]~dbin(0.5,2*errN_GC[i])
+
+eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
+
+log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems.
+
+p[i]<-size/(size+mu[i])
+
+N_GC[i]~dnegbin(p[i],size)
+
+# Prediction
+
 prediction.NB[i]~dnegbin(p[i],size)
 }
 }"
-
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
 params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
@@ -326,7 +375,7 @@ summary(as.mcmc.list(jagssamples.nb3$size))
 
 MBHtrue<-summary(as.mcmc.list(jags.samples(jags.neg3, params3, n.iter = 50000)$MBHtrue),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.NBerr$quantiles[,4],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
+pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
@@ -350,14 +399,14 @@ ggs_density(S.NB)+
 
 CairoPDF("JAGS_NB.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
-  geom_ribbon(aes(x=MBH,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=MBH,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=MBH,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
   geom_point(aes(colour=Type,shape=Type),size=3.25)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
                                   xmax=MBH+upMBH),alpha=0.7)+
-  geom_smooth(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2,method="lm",level = 0)+
+  geom_line(aes(x=MBHtrue,y=mean),colour="gray25",linetype="dashed",size=1.2)+
   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
