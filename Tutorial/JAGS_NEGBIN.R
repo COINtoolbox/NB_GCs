@@ -119,7 +119,6 @@ ggplot(pred.pois2,aes(x=MBH,y=NGC))+
 dev.off()
 
 
-
 S.pois<-ggs(posterior.pois,family="beta")
 S.pois$Parameter<-revalue(S.pois$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1])))
 
