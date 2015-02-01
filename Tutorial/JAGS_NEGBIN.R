@@ -348,8 +348,11 @@ p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
 
 # Prediction
-
-prediction.NB[i]~dnegbin(p[i],size)
+etaTrue[i]<-beta.0+beta.1*MBHtrue[i]
+    log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
+    pTrue[i]<-size/(size+muTrue[i])
+prediction.NB[i]~dnegbin(pTrue[i],size)
+#prediction.NB[i]~dnegbin(p[i],size)
 }
 }"
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
@@ -363,10 +366,10 @@ jags.neg3 <- jags.model(
   n.adapt=1000
 )
 
-update(jags.neg3, 25000)
+update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 100000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 150000)
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 50000)
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
