@@ -1,5 +1,6 @@
 #Poisson and NB regression using JAGS by Rafael S. de Souza, Bart Buelens, Ewan Cameron
 
+#  Required libraries
 library(rjags)
 library(ggmcmc)
 library(ggplot2)
@@ -58,28 +59,7 @@ jags.data3 <- list(
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   errMBH = upMBH
-#  meanx = mean(GCS$MBH),
-#  varx = var (GCS$MBH) 
 )
-
-#model.NB <- "model{
-# Priors for regression coefficients
-#beta.0~dnorm(0,0.000001)
-#beta.1~dnorm(0,0.000001)
-# Prior for size 
-#size~dunif(0.001,5)
-# Likelihood function
-#for (i in 1:N){
-#MBHtrue[i]~dnorm(MBH[i],1/errMBH[i]^2);
-#errorN[i]~dbin(0.5,2*errN_GC[i])
-#eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
-#log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
-#p[i]<-size/(size+mu[i])
-#N_GC[i]~dnegbin(p[i],size)
-# Prediction
-#prediction.NB[i]~dnegbin(p[i],size)
-#}
-#}"
 
 model.NB <- "model{
 
@@ -143,14 +123,17 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 50000)
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 5000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 5000)
+
+
+ggs(as.mcmc.list(jagssamples.nb3) ,family=c("beta"))
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
 summary(as.mcmc.list(jagssamples.nb3$size))
 
-MBHtrue<-summary(as.mcmc.list(jags.samples(jags.neg3, params3, n.iter = 50000)$MBHtrue),quantiles=0.5)
+MBHtrue<-summary(as.mcmc.list(jagssamples.nb3$MBHtrue),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 
