@@ -115,9 +115,9 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 #prediction.NB[i]~dnegbin(p[i],size)
 
 # Discrepancy measures
-YNew[i] ~ dnegbin(pTrue[i],size)
-expY[i] <- muTrue[i]
-varY[i] <- muTrue[i] + pow(muTrue[i],2) / size
+YNew[i] ~ dnegbin(p[i],size)
+expY[i] <- mu[i]
+varY[i] <- mu[i] + pow(mu[i],2) / size
 PRes[i] <-(N_GC[i] - expY[i])/sqrt(varY[i])
 PResNew[i] <-(YNew[i] - expY[i])/sqrt(varY[i])
 D[i]<-pow(PRes[i],2)
@@ -128,7 +128,7 @@ Fit<-sum(D[1:N])
 FitNew<-sum(DNew[1:N])
 }"
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue","D","Fit","FitNew")
+params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue","Fit","FitNew")
 
 jags.neg3 <- jags.model(
   data = jags.data3, 
@@ -140,8 +140,9 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 50000)
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 5000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 5000)
+dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 5000,type="pD")
 
 
 #ggs(as.mcmc.list(jagssamples.nb3) ,family=c("beta"))
@@ -156,8 +157,8 @@ pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH
 
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
-S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
-hist(ggs(codasamples.nb3,family=c("Fit"))[,"value"]-ggs(codasamples.nb3,family=c("FitNew"))[,"value"])
+#S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
+mean(ggs(codasamples.nb3,family=c("Fit"))[,"value"]>ggs(codasamples.nb3,family=c("FitNew"))[,"value"])
 
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
