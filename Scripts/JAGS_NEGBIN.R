@@ -115,9 +115,13 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 #prediction.NB[i]~dnegbin(p[i],size)
 
 # Discrepancy measures
+
 YNew[i] ~ dnegbin(p[i],size)
 expY[i] <- mu[i]
 varY[i] <- mu[i] + pow(mu[i],2) / size
+
+
+
 PRes[i] <-(N_GC[i] - expY[i])/sqrt(varY[i])
 PResNew[i] <-(YNew[i] - expY[i])/sqrt(varY[i])
 D[i]<-pow(PRes[i],2)
@@ -144,6 +148,11 @@ jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 5000)
 codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 5000)
 dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 5000,type="pD")
 
+hist(ggs(codasamples.nb3 ,family=c("FitNew"))[,"value"]) - ggs(codasamples.nb3 ,family=c("Fit"))[,"value"])
+
+
+
+#ggs(as.mcmc.list(jagssamples.nb3) ,family=c("beta"))
 
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
