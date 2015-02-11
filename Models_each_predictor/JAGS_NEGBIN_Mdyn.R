@@ -92,7 +92,11 @@ p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
 
 # Prediction
-prediction.NB[i]~dnegbin(p[i],size)
+etaTrue[i]<-beta.0+beta.1*Mdyn[i]
+  log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
+    pTrue[i]<-size/(size+muTrue[i])
+prediction.NB[i]~dnegbin(pTrue[i],size)
+
 
 # Discrepancy measures
 YNew[i] ~ dnegbin(p[i],size)
@@ -166,15 +170,15 @@ ggs_density(S.NB)+
 
 
 CairoPDF("JAGS_NB.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
   geom_point(aes(colour=Type,shape=Type),size=3.25)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-                                  xmax=MBH+upMBH),alpha=0.7)+
-  geom_line(aes(x=MBHtrue,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+#  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+#                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=Mdyn,y=mean),colour="gray25",linetype="dashed",size=1.2)+
   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
@@ -182,7 +186,7 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+  xlab(expression(log~M[dyn]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
                                                 axis.title.x=element_text(vjust=-0.25),
                                                 text = element_text(size=25))
