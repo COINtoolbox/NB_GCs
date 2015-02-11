@@ -49,11 +49,11 @@ give.n <- function(x){
 
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
-dim(GCS)
-N_err<-GCS$N_GC_err
+#dim(GCS)
+#N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
-err_sig_e<-GCS$err_sig_e
+#err_sig_e<-GCS$err_sig_e
 
 
 ######## NB with errors ########################################################
@@ -140,9 +140,9 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 5000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 5000)
-dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 5000,type="pD")
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 10000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 10000)
+dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 10000,type="pD")
 
 
 
@@ -161,7 +161,7 @@ S.NB2<-ggs(codasamples.nb3,family=c("size"))
 
 # Diagnostics
 Pred<-ggs(codasamples.nb3,family=c("FitNew"))[,"value"]
-Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:15000,"value"]
+Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:30000,"value"]
 sqrt(mean((Pred-Obs)^2))
 
 
