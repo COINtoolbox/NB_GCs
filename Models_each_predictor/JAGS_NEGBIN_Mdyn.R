@@ -58,7 +58,7 @@ N_err<-GCS$N_GC_err
 
 jags.data3 <- list(
   N_GC = GCS$N_GC,
-  Mdyn = GCS$MBH,
+  Mdyn = GCS$Mdyn,
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS)
   )
@@ -136,7 +136,7 @@ summary(as.mcmc.list(jagssamples.nb3$size))
 
 
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,Mdyn=GCS$Mdyn,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
+pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,Mdyn=GCS$Mdyn,mean=pred.NBerr$quantiles[,4],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
