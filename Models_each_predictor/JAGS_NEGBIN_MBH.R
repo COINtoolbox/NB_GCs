@@ -50,7 +50,7 @@ give.n <- function(x){
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
 #dim(GCS)
-#N_err<-GCS$N_GC_err
+N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
 #err_sig_e<-GCS$err_sig_e
@@ -80,7 +80,9 @@ size~dunif(0.001,5)
 
 # Hyperpriors
 
-meanx ~ dgamma(30,3)
+#meanx ~ dgamma(30,3)
+#varx ~ dgamma(2,1)
+meanx ~ dgamma(85,10)
 varx ~ dgamma(2,1)
 
 for (i in 1:N){
@@ -140,9 +142,9 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 10000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 10000)
-dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 10000,type="pD")
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 50000)
+codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 50000)
+dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 50000,type="pD")
 
 
 
@@ -161,7 +163,7 @@ S.NB2<-ggs(codasamples.nb3,family=c("size"))
 
 # Diagnostics
 Pred<-ggs(codasamples.nb3,family=c("FitNew"))[,"value"]
-Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:30000,"value"]
+Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:75000,"value"]
 sqrt(mean((Pred-Obs)^2))
 
 
@@ -185,7 +187,8 @@ ggs_density(S.NB)+
 
 
 
-CairoPDF("JAGS_NB.pdf",height=8,width=9)
+CairoPDF("..//Figures/JAGS_NB_MBH.pdf",height=8,width=9)
+#pdf("..//Figures/JAGS_NB_MBH.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
   geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
