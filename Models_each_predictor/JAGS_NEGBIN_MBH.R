@@ -90,7 +90,7 @@ for (i in 1:N){
 #MBHtrue[i]~dunif(5,12)
 
 # MBHtrue[i]~dnorm(8,0.000001) # this would be sensible too
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(6,11)
 }
 
 # Likelihood function
