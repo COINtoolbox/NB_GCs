@@ -10,8 +10,11 @@ library(plyr)
 library(MASS)
 library(scales)
 
-GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
-GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
+GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+GCS = subset(GCS, !is.na(MBH)) # 1 removed
+
+dim(GCS[,c("MBH","upMBH","lowMBH")])
+isCensored = (GCS$MBH == 0 )
 
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
