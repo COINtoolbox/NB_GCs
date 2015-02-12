@@ -12,14 +12,16 @@ library(scales)
 
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MBH)) # 1 removed
-
+UpM<-max(GCS$MBH)
 # Censoring information
 isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
-censorLimitVec = GCS$upMBH
+censorLimitVec = rep(UpM, length(GCS$MBH) )
 xinit=rep( NA , length(GCS$MBH) )
 xinit[isCensored] = censorLimitVec[isCensored]+1
 
+
+  
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
@@ -51,7 +53,7 @@ MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
 }
 # Likelihood function
 for (i in 1:N){
-isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i])# censoring MBH
+isCensored[i] ~ dinterval(MBH[i],censorLimitVec[i]); 
 MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 errorN[i]~dbin(0.5,2*errN_GC[i])
 eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
@@ -65,6 +67,24 @@ pTrue[i]<-size/(size+muTrue[i])
 prediction.NB[i]~dnegbin(pTrue[i],size)
 }
 }"
+
+inits <- list(beta.0=0,beta.1=0,size=0.1,MBH=xinit)
+params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
+
+
+jags.neg.c <- jags.model(
+  data = jags.data, 
+  inits = inits, 
+  textConnection(model.NB.c),
+  n.chains = 3,
+  n.adapt=1000
+)
+
+
+
+
+
+
 
 
 model.NB.d <- "model{
@@ -97,18 +117,9 @@ model.NB.d <- "model{
   }
 }"
 
-inits <- list(beta.0=0,beta.1=0,size=0.1,MBHtrue=xinit)
-params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 
 
-jags.neg.c <- jags.model(
-  data = jags.data, 
-  inits = inits, 
-  textConnection(model.NB.c),
-  n.chains = 3,
-  n.adapt=1000
-)
 
 jags.neg.d <- jags.model(
   data = jags.data, 

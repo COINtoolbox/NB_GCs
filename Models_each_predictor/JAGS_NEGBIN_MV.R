@@ -51,23 +51,19 @@ GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
 #dim(GCS)
 N_err<-GCS$N_GC_err
-err_sig_e<-GCS$err_sig_e
+err_MV_T<-GCS$err_MV_T
 
 
 ######## NB with errors ########################################################
 
 jags.data3 <- list(
   N_GC = GCS$N_GC,
-  sig_e = GCS$sig_e,
+  MV_T = GCS$MV_T,
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
-  err_sig_e = err_sig_e,
+  err_MV_T = err_MV_T
   # values for gamma hyperpriors  
-  a1 = mean(GCS$sig_e)^2/var(GCS$sig_e),
-  b1 = mean(GCS$sig_e)/var(GCS$sig_e),
-  a2=var(GCS$sig_e),
-  b2=1  
-)
+ )
 
 
 model.NB <- "model{
@@ -82,25 +78,22 @@ beta.1~dnorm(0,0.000001)
 
 size~dunif(0.001,5)
 
-# Hyperpriors
-
-meanx ~ dgamma(a1,b1) 
-varx ~ dgamma(a2,b2) 
+#
 
 for (i in 1:N){
 
-sig_e_true[i] ~ dgamma(meanx^2/varx,meanx/varx)T(50,400)
+MV_T_true[i]~dunif(-25,-15)
 }
 
 # Likelihood function
 
 for (i in 1:N){
 
-sig_e[i]~dnorm(sig_e_true[i],1/err_sig_e[i]^2);
+MV_T[i]~dnorm(MV_T_true[i],1/err_MV_T[i]^2);
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
 
-eta[i]<-beta.0+beta.1*sig_e_true[i]+exp(errorN[i]-errN_GC[i])
+eta[i]<-beta.0+beta.1*MV_T_true[i]+exp(errorN[i]-errN_GC[i])
 
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems.
 
@@ -109,7 +102,7 @@ p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
 
 # Prediction
-etaTrue[i]<-beta.0+beta.1*sig_e_true[i]
+etaTrue[i]<-beta.0+beta.1*MV_T_true[i]
     log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
     pTrue[i]<-size/(size+muTrue[i])
 prediction.NB[i]~dnegbin(pTrue[i],size)
@@ -129,7 +122,7 @@ Fit<-sum(D[1:N])
 NewFit<-sum(DNew[1:N])
 }"
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB","sig_e_true","Fit","NewFit")
+params3 <- c("beta.0","beta.1","size","prediction.NB","MV_T_true","Fit","NewFit")
 
 jags.neg3 <- jags.model(
   data = jags.data3, 
@@ -151,9 +144,9 @@ summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
 summary(as.mcmc.list(jagssamples.nb3$size))
 
-sig_e_true<-summary(as.mcmc.list(jagssamples.nb3$sig_e_true),quantiles=0.5)
+MV_T_true<-summary(as.mcmc.list(jagssamples.nb3$MV_T_true),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,sig_e_true=sig_e_true$quantiles,sig_e=GCS$sig_e,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
+pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MV_T_true=MV_T_true$quantiles,MV_T=GCS$MV_T,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
@@ -186,16 +179,16 @@ ggs_density(S.NB)+
 
 
 
-CairoPDF("..//Figures/JAGS_NB_sig_e.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=sig_e,y=NGC))+
-  geom_ribbon(aes(x=sig_e_true,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=sig_e_true,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=sig_e_true,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+CairoPDF("..//Figures/JAGS_NB_M_V.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
+  geom_ribbon(aes(x=MV_T_true,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(x=MV_T_true,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(x=MV_T_true,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
   geom_point(aes(colour=Type,shape=Type),size=3.25)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-  geom_errorbarh(guide="none",aes(colour=Type,xmin=sig_e-GCS$err_sig_e,
-                                  xmax=sig_e+err_sig_e),alpha=0.7)+
-  geom_line(aes(x=sig_e_true,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
+                                  xmax=MV_T+err_MV_T),alpha=0.7)+
+  geom_line(aes(x=MV_T_true,y=mean),colour="gray25",linetype="dashed",size=1.2)+
   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
@@ -203,7 +196,7 @@ ggplot(pred.NB2err,aes(x=sig_e,y=NGC))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(sigma[e]~(km/s)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+  xlab(expression(M[V]))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
                                                 axis.title.x=element_text(vjust=-0.25),
                                                 text = element_text(size=25))
