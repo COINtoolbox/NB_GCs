@@ -1,0 +1,11 @@
+
+model {
+for ( i in 1:N ) {
+isCensored[i] ~ dinterval( y[i] , censorLimitVec[i] )
+y[i] ~ dnorm( mu , tau ) 
+}
+tau <- 1/pow(sigma,2)
+sigma ~ dunif(0,100)
+mu ~ dnorm(0,1E-6)
+}
+
