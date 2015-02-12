@@ -185,7 +185,7 @@ ggs_density(S.NB)+
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
 
 
-
+#
 CairoPDF("..//Figures/JAGS_NB_sig_e.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=sig_e,y=NGC))+
   geom_ribbon(aes(x=sig_e_true,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
