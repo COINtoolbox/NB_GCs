@@ -179,7 +179,7 @@ ggs_density(S.NB)+
 
 
 
-CairoPDF("..//Figures/JAGS_NB_M_V.pdf",height=8,width=9)
+pdf("..//Figures/JAGS_NB_M_V.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
   geom_ribbon(aes(x=MV_T_true,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
   geom_ribbon(aes(x=MV_T_true,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
