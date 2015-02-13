@@ -141,7 +141,7 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 10000)
+jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 30000)
 codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 10000)
 dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 10000,type="pD")
 
@@ -203,7 +203,7 @@ ggplot(pred.NB2err,aes(x=sig_e,y=NGC))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
-  xlab(expression(sigma[e]~(km/s)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+  xlab(expression(sigma~(km/s)))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                                 axis.title.y=element_text(vjust=0.75),
                                                 axis.title.x=element_text(vjust=-0.25),
                                                 text = element_text(size=25))
