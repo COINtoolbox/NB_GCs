@@ -60,7 +60,7 @@ err_sig_e<-GCS$err_sig_e
 
 MBHx = seq(from = 0.95 * min(GCS$MBH), 
            to = 1.05 * max(GCS$MBH), 
-           length.out = 50)
+           length.out = 100)
 
 jags.data3 <- list(
   N_GC = GCS$N_GC,
@@ -69,7 +69,7 @@ jags.data3 <- list(
   N = nrow(GCS),
   errMBH = upMBH,
   MBHx = MBHx,
-  M = 50
+  M = 100
 )
 
 model.NB <- "model{
