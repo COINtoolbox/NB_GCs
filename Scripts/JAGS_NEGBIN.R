@@ -179,6 +179,59 @@ pred.NBerrx<-summary(as.mcmc.list(jagssamples.nb3$prediction.NBx),quantiles=c(0.
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 pred.NB2errx<-data.frame(MBHx=MBHx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBerrx$quantiles[,3],lwr2=pred.NBerrx$quantiles[,2],lwr3=pred.NBerrx$quantiles[,1],upr1=pred.NBerrx$quantiles[,5],upr2=pred.NBerrx$quantiles[,6],upr3=pred.NBerrx$quantiles[,7])
 
+
+
+
+CairoPDF("JAGS_NB.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=MBHtrue,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                axis.title.y=element_text(vjust=0.75),
+                                                axis.title.x=element_text(vjust=-0.25),
+                                                text = element_text(size=25))
+dev.off()
+
+CairoPDF("JAGS_NBx.pdf",height=8,width=9)
+CairoFonts(regular = 'Calibri:style=Regular')
+ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
+  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(data=pred.NB2errx,aes(x=MBHx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                axis.title.y=element_text(vjust=0.75),
+                                                axis.title.x=element_text(vjust=-0.25),
+                                                text = element_text(size=25))
+dev.off()
+
+
+
+
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
 #S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
@@ -207,58 +260,6 @@ ggs_density(S.NB)+
         strip.text.x=element_text(size=25),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
-
-
-
-CairoPDF("JAGS_NB.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-                                  xmax=MBH+upMBH),alpha=0.7)+
-  geom_line(aes(x=MBHtrue,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-                     labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme_hc()+
-  ylab(expression(N[GC]))+
-  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
-                                                axis.title.y=element_text(vjust=0.75),
-                                                axis.title.x=element_text(vjust=-0.25),
-                                                text = element_text(size=25))
-dev.off()
-
-CairoPDF("JAGS_NBx.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
-  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-                                  xmax=MBH+upMBH),alpha=0.7)+
-  geom_line(data=pred.NB2errx,aes(x=MBHx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-                     labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme_hc()+
-  ylab(expression(N[GC]))+
-  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
-                                                axis.title.y=element_text(vjust=0.75),
-                                                axis.title.x=element_text(vjust=-0.25),
-                                                text = element_text(size=25))
-dev.off()
-
-
-
-
 
 
 
