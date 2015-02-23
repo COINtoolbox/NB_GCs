@@ -54,6 +54,7 @@ meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
 MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,11)
+
 }
 # Likelihood function
 for (i in 1:N){
