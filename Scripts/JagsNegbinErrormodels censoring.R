@@ -12,15 +12,18 @@ library(scales)
 
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MBH)) # 1 removed
-UpM<-max(GCS$MBH)
+#UpM<-max(GCS$MBH)
+Upm<-GCS$MBH+GCS$upMBH
 # Censoring information
 isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
-censorLimitVec = rep(UpM, length(GCS$MBH) )
+#censorLimitVec = rep(UpM, length(GCS$MBH) )
+censorLimitVec=Upm
 xinit=rep( NA , length(GCS$MBH) )
 xinit[isCensored] = censorLimitVec[isCensored]+1
-
-
+#for(i in 1:sum(isCensored)){
+#xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+#}
   
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
