@@ -34,15 +34,13 @@ err_sig_e<-GCS$err_sig_e
 
 jags.data <- list(
   N_GC = GCS$N_GC,
-  MBH = GCS$MBH[!isCensored],
+  MBH = GCS$MBH,
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   errMBH = upMBH,
- isCensored = as.numeric(isCensored), 
- censorLimitVec = censorLimitVec,
- MBHcens=GCS$MBH[isCensored]
-
-)
+ isobserved = as.numeric(!isCensored), 
+ censorLimitVec = censorLimitVec
+ )
 
 
 model.NB.c <- "model{
@@ -55,27 +53,20 @@ size~dunif(0.001,5)
 meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,11)
 }
 # Likelihood function
-for (i in 1:N1){
-
-MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
-}
-
-for (i in 1:N2){
-
-MBHcens[i] ~ dunif(0,censorLimitVec[i]); 
-
-}
-
-
 for (i in 1:N){
+
+isobserved[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
+MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
+
 errorN[i]~dbin(0.5,2*errN_GC[i])
 eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems.
 p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
+
 # Prediction
 etaTrue[i]<-beta.0+beta.1*MBHtrue[i]
 log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
