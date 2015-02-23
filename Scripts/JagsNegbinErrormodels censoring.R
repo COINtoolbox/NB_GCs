@@ -66,6 +66,7 @@ MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 for (i in 1:N2){
 
 MBHcens[i] ~ dunif(0,censorLimitVec[i]); 
+
 }
 
 
