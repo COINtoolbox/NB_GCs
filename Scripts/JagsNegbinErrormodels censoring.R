@@ -19,11 +19,11 @@ isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
 #censorLimitVec = rep(UpM, length(GCS$MBH) )
 censorLimitVec=Upm
-xinit=rep( NA , length(GCS$MBH) )
+xinit=rep( NA , length(GCS$MBH[isCensored]) )
 #xinit[isCensored] = censorLimitVec[isCensored]+1
 
 for(i in 1:sum(isCensored)){
-xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+xinit[[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
 }
   
 N_err<-GCS$N_GC_err
@@ -38,8 +38,13 @@ jags.data <- list(
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   errMBH = upMBH,
- isobserved = as.numeric(!isCensored), 
- censorLimitVec = censorLimitVec
+ isCensored = as.numeric(isCensored), 
+ isObserved = as.numeric(!isCensored), 
+ censorLimitVec = censorLimitVec,
+ N1=sum(!isCensored),
+ N2=sum(isCensored),
+ MBHobs=GCS$MBH[!isCensored],
+ MBHcens=GCS$MBH[isCensored]
  )
 
 
@@ -54,13 +59,22 @@ meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
 MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,11)
-
 }
 # Likelihood function
-for (i in 1:N){
+for (i in 1:N1){
 
-isobserved[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
-MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
+MBHobs[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
+}
+
+for (i in 1:N2){
+
+#isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
+#isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
+#MBHtrue[i]~dunif(0,censorLimitVec[i])
+MBHcens[i]~dnorm(MBHtrue[i], 1/censorLimitVec[i]^2 )T(0,censorLimitVec[i])
+}
+
+for (i in 1:N){
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
 eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
@@ -76,7 +90,7 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 }
 }"
 
-inits <- list(beta.0=0,beta.1=0,size=0.1,MBH=xinit)
+inits <- list(beta.0=0,beta.1=0,size=0.1,MBHcens=xinit)
 params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 
