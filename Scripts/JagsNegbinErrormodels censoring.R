@@ -12,19 +12,19 @@ library(scales)
 
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MBH)) # 1 removed
-#UpM<-max(GCS$MBH)
-Upm<-GCS$MBH+GCS$upMBH
+#UpM<-min(GCS$MBH)
+UpM<-min(GCS$MBH+GCS$upMBH)
 # Censoring information
 isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
-#censorLimitVec = rep(UpM, length(GCS$MBH) )
-censorLimitVec=Upm
-xinit=rep( NA , length(GCS$MBH[isCensored]) )
-#xinit[isCensored] = censorLimitVec[isCensored]+1
+censorLimitVec = rep(UpM, length(GCS$MBH) )
+#censorLimitVec=Upm
+xinit=rep( NA , length(GCS$MBH) )
+xinit[isCensored] = censorLimitVec[isCensored]-1
 
-for(i in 1:sum(isCensored)){
-xinit[[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
-}
+#for(i in 1:sum(isCensored)){
+#xinit[[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+#}
   
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
@@ -40,11 +40,7 @@ jags.data <- list(
   errMBH = upMBH,
  isCensored = as.numeric(isCensored), 
  isObserved = as.numeric(!isCensored), 
- censorLimitVec = censorLimitVec,
- N1=sum(!isCensored),
- N2=sum(isCensored),
- MBHobs=GCS$MBH[!isCensored],
- MBHcens=GCS$MBH[isCensored]
+ censorLimitVec = UpM
  )
 
 
@@ -59,25 +55,13 @@ meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
 
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,11)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)
 
 }
 # Likelihood function
-for (i in 1:N1){
-
-MBHobs[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
-}
-
-for (i in 1:N2){
-
-#isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
-#isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
-#MBHtrue[i]~dunif(0,censorLimitVec[i])
-#MBHtrue[i]~dunif(0,MBHcens[i])
-MBHcens[i]~dnorm(MBHtrue[i],1/(0.5*censorLimitVec[i])^2)T(0,censorLimitVec[i])
-}
-
 for (i in 1:N){
+isObserved[i] ~ dinterval(MBHtrue[i], censorLimitVec)
+MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
 eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
@@ -93,7 +77,7 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 }
 }"
 
-inits <- list(beta.0=0,beta.1=0,size=0.1,MBHcens=xinit)
+inits <- list(beta.0=0,beta.1=0,size=0.1,MBHtrue=xinit)
 params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 
