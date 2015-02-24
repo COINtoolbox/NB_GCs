@@ -58,7 +58,9 @@ size~dunif(0.001,5)
 meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
+
 MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,11)
+
 }
 # Likelihood function
 for (i in 1:N1){
@@ -71,7 +73,8 @@ for (i in 1:N2){
 #isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
 #isCensored[i] ~ dinterval(MBHtrue[i], censorLimitVec[i] )
 #MBHtrue[i]~dunif(0,censorLimitVec[i])
-MBHcens[i]~dnorm(MBHtrue[i], 1/censorLimitVec[i]^2 )T(0,censorLimitVec[i])
+#MBHtrue[i]~dunif(0,MBHcens[i])
+MBHcens[i]~dnorm(MBHtrue[i],1/(0.5*censorLimitVec[i])^2)T(0,censorLimitVec[i])
 }
 
 for (i in 1:N){
