@@ -57,7 +57,7 @@ N_err<-GCS$N_GC_err
 ######## NB with errors ########################################################
 Mdynx = seq(from = 0.95 * min(GCS$Mdyn), 
            to = 1.05 * max(GCS$Mdyn), 
-           length.out = 100)
+           length.out = 50)
 
 jags.data <- list(
   N_GC = GCS$N_GC,
@@ -65,7 +65,7 @@ jags.data <- list(
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   Mdynx = Mdynx,
-  M = 100
+  M = 50
   )
 
 model.NB <- "model{
@@ -114,7 +114,7 @@ DNew[i]<-pow(PResNew[i],2)
 
 }
 Fit<-sum(D[1:N])
-FitNew<-sum(DNew[1:N])
+New<-sum(DNew[1:N])
 # Prediction for new data
 for (j in 1:M){
   etax[j]<-beta.0+beta.1*Mdynx[j]
@@ -124,7 +124,7 @@ for (j in 1:M){
 }
 }"
 inits <- list(beta.0=0,beta.1=0,size=0.1)
-params <- c("beta.0","beta.1","size","prediction.NB","Fit","FitNew","Mdynx")
+params <- c("beta.0","beta.1","size","prediction.NB","Fit","New","prediction.NBx")
 
 jags.neg <- jags.model(
   data = jags.data, 
@@ -134,11 +134,9 @@ jags.neg <- jags.model(
   n.adapt=1000
 )
 
-update(jags.neg3, 10000)
+update(jags.neg, 10000)
 
-jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 10000)
-codasamples.nb <- coda.samples(jags.neg, params, n.iter = 10000)
-dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 10000,type="pD")
+jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 50000)
 
 
 
@@ -151,7 +149,36 @@ pred.NBerr<-summary(as.mcmc.list(jagssamples.nb$prediction.NB),quantiles=c(0.005
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,Mdyn=GCS$Mdyn,mean=pred.NBerr$quantiles[,4],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
 pred.NBerrx<-summary(as.mcmc.list(jagssamples.nb$prediction.NBx),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2errx<-data.frame(Mdynx=Mdynx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBerrx$quantiles[,3],lwr2=pred.NBerrx$quantiles[,2],lwr3=pred.NBerrx$quantiles[,1],upr1=pred.NBerrx$quantiles[,5],upr2=pred.NBerrx$quantiles[,6],upr3=pred.NBerrx$quantiles[,7])
-CairoPDF("..//Figures/JAGS_NB_Mdyn.pdf",height=8,width=9)
+
+
+
+
+#CairoPDF("..//Figures/Mdynx.pdf",height=8,width=9)
+pdf("..//Figures/Mdynx.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  #  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+  #                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(data=pred.NB2errx,aes(x=Mdynx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[dyn]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                 axis.title.y=element_text(vjust=0.75),
+                                                 axis.title.x=element_text(vjust=-0.25),
+                                                 text = element_text(size=25))
+dev.off()
+
+#CairoPDF("..//Figures/JAGS_NB_Mdyn.pdf",height=8,width=9)
+pdf("..//Figures/JAGS_NB_Mdyn.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
   geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
   geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
@@ -174,23 +201,19 @@ ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
                                                  text = element_text(size=25))
 dev.off()
 
-S.NB1<-ggs(codasamples.nb ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb,family=c("size"))
-#S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
 
 
 # Diagnostics
-Pred<-ggs(codasamples.nb,family=c("FitNew"))[,"value"]
-Obs<-ggs(codasamples.nb,family=c("Fit"))[1:30000,"value"]
-sqrt(mean((Pred-Obs)^2))
-
+codasamples.nb <- coda.samples(jags.neg, params, n.iter = 10000)
+S.NB1<-ggs(codasamples.nb ,family=c("beta"))
+S.NB2<-ggs(codasamples.nb,family=c("size"))
 
 
 
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
                                           "size"="k"))
-
+CairoPDF("..//Figures/Chain_Mdyn.pdf",height=8,width=9)
 ggs_density(S.NB)+
   scale_colour_economist(guide="none")+
   theme_hc()+
@@ -202,10 +225,15 @@ ggs_density(S.NB)+
         strip.text.x=element_text(size=25),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+dev.off()
 
 
+# Model comparison 
 
-
+Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
+Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
+sqrt(mean((Pred-Obs)^2))
+dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 10000,type="pD")
 
 
 

@@ -133,7 +133,7 @@ DNew[i]<-pow(PResNew[i],2)
 
 }
 Fit<-sum(D[1:N])
-FitNew<-sum(DNew[1:N])
+New<-sum(DNew[1:N])
 # Prediction for new data
 for (j in 1:M){
   etax[j]<-beta.0+beta.1*MBHx[j]
@@ -143,7 +143,7 @@ for (j in 1:M){
 }
 }"
 inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue","Fit","FitNew","prediction.NBx")
+params3 <- c("beta.0","beta.1","size","prediction.NB","MBHtrue","Fit","New","prediction.NBx")
 
 jags.neg3 <- jags.model(
   data = jags.data3, 
@@ -177,7 +177,7 @@ pred.NB2errx<-data.frame(MBHx=MBHx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBe
 
 #CairoPDF("..//Figures/JAGS_NBx.pdf",height=8,width=9)
 #CairoFonts(regular = 'Calibri:style=Regular')
-CairoPDF("..//Figures/JAGS_NBx.pdf",height=8,width=9)
+CairoPDF("..//Figures/MBHx.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
@@ -227,15 +227,15 @@ dev.off()
 
 
 
-S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb3,family=c("size"))
-#S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
-
 
 # Diagnostics
-Pred<-ggs(codasamples.nb3,family=c("FitNew"))[,"value"]
-Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:75000,"value"]
-sqrt(mean((Pred-Obs)^2))
+S.NB1<-ggs(codasamples.nb ,family=c("beta"))
+S.NB2<-ggs(codasamples.nb,family=c("size"))
+
+
+
+
+
 
 
 
@@ -257,8 +257,10 @@ ggs_density(S.NB)+
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
 
 
-
-
+# Model comparison 
+Pred<-ggs(codasamples.nb3,family=c("New"))[,"value"]
+Obs<-ggs(codasamples.nb3,family=c("Fit"))[,"value"]
+sqrt(mean((Pred-Obs)^2))
 
 
 

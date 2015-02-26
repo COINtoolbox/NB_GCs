@@ -55,14 +55,18 @@ err_MV_T<-GCS$err_MV_T
 
 
 ######## NB with errors ########################################################
+MV_Tx = seq(from = 0.95 * min(GCS$MV_T), 
+            to = 1.05 * max(GCS$MV_T), 
+            length.out = 100)
 
-jags.data3 <- list(
+jags.data <- list(
   N_GC = GCS$N_GC,
   MV_T = GCS$MV_T,
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
-  err_MV_T = err_MV_T
-  # values for gamma hyperpriors  
+  err_MV_T = err_MV_T,
+  MV_Tx = MV_Tx,
+  M = 100
  )
 
 
@@ -119,63 +123,55 @@ DNew[i]<-pow(PResNew[i],2)
 
 }
 Fit<-sum(D[1:N])
-NewFit<-sum(DNew[1:N])
-}"
-inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB","MV_T_true","Fit","NewFit")
+New<-sum(DNew[1:N])
 
-jags.neg3 <- jags.model(
-  data = jags.data3, 
-  inits = inits3, 
+# Prediction for new data
+for (j in 1:M){
+  etax[j]<-beta.0+beta.1*MV_Tx[j]
+  log(mux[j])<-max(-20,min(20,etax[j]))
+  px[j]<-size/(size+mux[j])
+  prediction.NBx[j]~dnegbin(px[j],size)
+}
+}"
+inits <- list(beta.0=0,beta.1=0,size=0.1)
+params <- c("beta.0","beta.1","size","prediction.NB","MV_T_true","Fit","New","prediction.NBx")
+
+jags.neg <- jags.model(
+  data = jags.data, 
+  inits = inits, 
   textConnection(model.NB),
   n.chains = 3,
   n.adapt=1000
 )
 
-update(jags.neg3, 10000)
+update(jags.neg, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 10000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 10000)
-dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 10000,type="pD")
-
+jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 10000)
 
 
 summary(as.mcmc.list(jagssamples.nb3$beta.0))
 summary(as.mcmc.list(jagssamples.nb3$beta.1))
 summary(as.mcmc.list(jagssamples.nb3$size))
 
-MV_T_true<-summary(as.mcmc.list(jagssamples.nb3$MV_T_true),quantiles=0.5)
-pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+MV_T_true<-summary(as.mcmc.list(jagssamples.nb$MV_T_true),quantiles=0.5)
+pred.NBerr<-summary(as.mcmc.list(jagssamples.nb$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MV_T_true=MV_T_true$quantiles,MV_T=GCS$MV_T,mean=pred.NBerr$statistics[,1],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
+pred.NBerrx<-summary(as.mcmc.list(jagssamples.nb$prediction.NBx),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+pred.NB2errx<-data.frame(MV_Tx=MV_Tx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBerrx$quantiles[,3],lwr2=pred.NBerrx$quantiles[,2],lwr3=pred.NBerrx$quantiles[,1],upr1=pred.NBerrx$quantiles[,5],upr2=pred.NBerrx$quantiles[,6],upr3=pred.NBerrx$quantiles[,7])
+
+
 
 S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb3,family=c("size"))
 #S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
 
 
-# Diagnostics
-Pred<-ggs(codasamples.nb3,family=c("NewFit"))[,"value"]
-Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:30000,"value"]
-sqrt(mean((Pred-Obs)^2))
 
 
 
 
-S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
-S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
-                                          "size"="k"))
 
-ggs_density(S.NB)+
-  scale_colour_economist(guide="none")+
-  theme_hc()+
-  scale_fill_economist()+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
-        legend.position="none",plot.title = element_text(hjust=0.5),
-        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
-        strip.text.x=element_text(size=25),
-        axis.title.x=element_text(vjust=-0.25),
-        text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+
 
 
 
@@ -204,13 +200,42 @@ dev.off()
 
 
 
+# Diagnostics
 
 
 
 
+codasamples.nb <- coda.samples(jags.neg, params, n.iter = 10000)
+S.NB1<-ggs(codasamples.nb ,family=c("beta"))
+S.NB2<-ggs(codasamples.nb,family=c("size"))
 
 
 
+S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
+S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
+                                          "size"="k"))
+
+ggs_density(S.NB)+
+  scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+
+
+
+# Model comparison 
+dicsamples.nb <- dic.samples(jags.neg, params3, n.iter = 10000,type="pD")
+
+Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
+Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
+sqrt(mean((Pred-Obs)^2))
+dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 10000,type="pD")
 
 
 
