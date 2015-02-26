@@ -55,12 +55,17 @@ N_err<-GCS$N_GC_err
 
 
 ######## NB with errors ########################################################
+Mdynx = seq(from = 0.95 * min(GCS$Mdyn), 
+           to = 1.05 * max(GCS$Mdyn), 
+           length.out = 100)
 
-jags.data3 <- list(
+jags.data <- list(
   N_GC = GCS$N_GC,
   Mdyn = GCS$Mdyn,
   errN_GC = GCS$N_GC_err,
-  N = nrow(GCS)
+  N = nrow(GCS),
+  Mdynx = Mdynx,
+  M = 100
   )
 
 model.NB <- "model{
@@ -110,13 +115,20 @@ DNew[i]<-pow(PResNew[i],2)
 }
 Fit<-sum(D[1:N])
 FitNew<-sum(DNew[1:N])
+# Prediction for new data
+for (j in 1:M){
+  etax[j]<-beta.0+beta.1*Mdynx[j]
+  log(mux[j])<-max(-20,min(20,etax[j]))
+  px[j]<-size/(size+mux[j])
+  prediction.NBx[j]~dnegbin(px[j],size)
+}
 }"
-inits3 <- list(beta.0=0,beta.1=0,size=0.1)
-params3 <- c("beta.0","beta.1","size","prediction.NB","Fit","FitNew")
+inits <- list(beta.0=0,beta.1=0,size=0.1)
+params <- c("beta.0","beta.1","size","prediction.NB","Fit","FitNew","Mdynx")
 
-jags.neg3 <- jags.model(
-  data = jags.data3, 
-  inits = inits3, 
+jags.neg <- jags.model(
+  data = jags.data, 
+  inits = inits, 
   textConnection(model.NB),
   n.chains = 3,
   n.adapt=1000
@@ -124,28 +136,52 @@ jags.neg3 <- jags.model(
 
 update(jags.neg3, 10000)
 
-jagssamples.nb3 <- jags.samples(jags.neg3, params3, n.iter = 10000)
-codasamples.nb3 <- coda.samples(jags.neg3, params3, n.iter = 10000)
-dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 10000,type="pD")
+jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 10000)
+codasamples.nb <- coda.samples(jags.neg, params, n.iter = 10000)
+dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 10000,type="pD")
 
 
 
-summary(as.mcmc.list(jagssamples.nb3$beta.0))
-summary(as.mcmc.list(jagssamples.nb3$beta.1))
-summary(as.mcmc.list(jagssamples.nb3$size))
+summary(as.mcmc.list(jagssamples.nb$beta.0))
+summary(as.mcmc.list(jagssamples.nb$beta.1))
+summary(as.mcmc.list(jagssamples.nb$size))
 
 
-pred.NBerr<-summary(as.mcmc.list(jagssamples.nb3$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+pred.NBerr<-summary(as.mcmc.list(jagssamples.nb$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,Mdyn=GCS$Mdyn,mean=pred.NBerr$quantiles[,4],lwr1=pred.NBerr$quantiles[,3],lwr2=pred.NBerr$quantiles[,2],lwr3=pred.NBerr$quantiles[,1],upr1=pred.NBerr$quantiles[,5],upr2=pred.NBerr$quantiles[,6],upr3=pred.NBerr$quantiles[,7])
+pred.NBerrx<-summary(as.mcmc.list(jagssamples.nb$prediction.NBx),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+pred.NB2errx<-data.frame(Mdynx=Mdynx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBerrx$quantiles[,3],lwr2=pred.NBerrx$quantiles[,2],lwr3=pred.NBerrx$quantiles[,1],upr1=pred.NBerrx$quantiles[,5],upr2=pred.NBerrx$quantiles[,6],upr3=pred.NBerrx$quantiles[,7])
+CairoPDF("..//Figures/JAGS_NB_Mdyn.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  #  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+  #                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=Mdyn,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[dyn]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                 axis.title.y=element_text(vjust=0.75),
+                                                 axis.title.x=element_text(vjust=-0.25),
+                                                 text = element_text(size=25))
+dev.off()
 
-S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb3,family=c("size"))
+S.NB1<-ggs(codasamples.nb ,family=c("beta"))
+S.NB2<-ggs(codasamples.nb,family=c("size"))
 #S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
 
 
 # Diagnostics
-Pred<-ggs(codasamples.nb3,family=c("FitNew"))[,"value"]
-Obs<-ggs(codasamples.nb3,family=c("Fit"))[1:30000,"value"]
+Pred<-ggs(codasamples.nb,family=c("FitNew"))[,"value"]
+Obs<-ggs(codasamples.nb,family=c("Fit"))[1:30000,"value"]
 sqrt(mean((Pred-Obs)^2))
 
 
@@ -169,28 +205,6 @@ ggs_density(S.NB)+
 
 
 
-CairoPDF("..//Figures/JAGS_NB_Mdyn.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=Mdyn,y=NGC))+
-  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=Mdyn,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-#  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-#                                  xmax=MBH+upMBH),alpha=0.7)+
-  geom_line(aes(x=Mdyn,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-                     labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme_hc()+
-  ylab(expression(N[GC]))+
-  xlab(expression(log~M[dyn]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
-                                                axis.title.y=element_text(vjust=0.75),
-                                                axis.title.x=element_text(vjust=-0.25),
-                                                text = element_text(size=25))
-dev.off()
 
 
 
