@@ -13,19 +13,20 @@ library(scales)
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MBH)) # 1 removed
 #UpM<-min(GCS$MBH)
-UpM<-GCS$MBH+GCS$upMBH
-#UpM<-5
+UpM<-min(GCS$MBH+GCS$upMBH)
+#UpM<-3
 # Censoring information
 isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
-#censorLimitVec = rep(UpM, length(GCS$MBH) )
-censorLimitVec=UpM
+censorLimitVec = rep(UpM, length(GCS$MBH) )
+#censorLimitVec=UpM
 xinit=rep( NA , length(GCS$MBH) )
-xinit[isCensored] = censorLimitVec[isCensored]-1
 
-#for(i in 1:sum(isCensored)){
-#xinit[[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
-#}
+for(i in 1:sum(isCensored)){
+#xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+}
+}
   
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
@@ -56,12 +57,12 @@ meanx ~ dgamma(30,3)
 varx ~ dgamma(2,1)
 for (i in 1:N){
 
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(2,12)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
 
 }
 # Likelihood function
 for (i in 1:N){
-isObserved[i] ~ dinterval(MBHtrue[i], censorLimitVec[i])
+isObserved[i] ~ dinterval(MBHtrue[i],  censorLimitVec[i])
 MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
