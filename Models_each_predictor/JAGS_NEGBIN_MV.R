@@ -47,17 +47,17 @@ give.n <- function(x){
 
 # Read data
 
-GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
-GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
+GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
 err_MV_T<-GCS$err_MV_T
 
 
 ######## NB with errors ########################################################
-MV_Tx = seq(from = 0.95 * min(GCS$MV_T), 
-            to = 1.05 * max(GCS$MV_T), 
-            length.out = 100)
+MV_Tx = seq(from = 1.05 * min(GCS$MV_T), 
+            to = 0.95 * max(GCS$MV_T), 
+            length.out = 500)
 
 jags.data <- list(
   N_GC = GCS$N_GC,
@@ -66,7 +66,7 @@ jags.data <- list(
   N = nrow(GCS),
   err_MV_T = err_MV_T,
   MV_Tx = MV_Tx,
-  M = 100
+  M = 500
  )
 
 
@@ -86,7 +86,7 @@ size~dunif(0.001,5)
 
 for (i in 1:N){
 
-MV_T_true[i]~dunif(-25,-15)
+MV_T_true[i]~dunif(-26,-10)
 }
 
 # Likelihood function
@@ -146,12 +146,12 @@ jags.neg <- jags.model(
 
 update(jags.neg, 10000)
 
-jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 10000)
+jagssamples.nb <- jags.samples(jags.neg, params, n.iter = 50000)
 
 
-summary(as.mcmc.list(jagssamples.nb3$beta.0))
-summary(as.mcmc.list(jagssamples.nb3$beta.1))
-summary(as.mcmc.list(jagssamples.nb3$size))
+summary(as.mcmc.list(jagssamples.nb$beta.0))
+summary(as.mcmc.list(jagssamples.nb$beta.1))
+summary(as.mcmc.list(jagssamples.nb$size))
 
 MV_T_true<-summary(as.mcmc.list(jagssamples.nb$MV_T_true),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jagssamples.nb$prediction.NB),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
@@ -161,30 +161,29 @@ pred.NB2errx<-data.frame(MV_Tx=MV_Tx,mean=pred.NBerrx$statistics[,1],lwr1=pred.N
 
 
 
-S.NB1<-ggs(codasamples.nb3 ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb3,family=c("size"))
-#S.NB3<-ggs(codasamples.nb3,family=c("Fit"))
 
 
 
 
 
-
-
-pdf("..//Figures/M_Vx.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+asinh_trans <- function(){
+  trans_new(name = 'asinh', transform = function(x) asinh(x), 
+            inverse = function(x) sinh(x))
+}
+cairo_pdf("..//Figures/M_Vx.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=MV_T,y=asinh(NGC)))+
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr1), ymax=asinh(upr1)), alpha=0.3, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr2), ymax=asinh(upr2)), alpha=0.2, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr3), ymax=asinh(upr3)), alpha=0.1, fill="gray") +
   geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=asinh(NGC-N_err),ymax=asinh(NGC+N_err)),alpha=0.7)+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
                                   xmax=MV_T+err_MV_T),alpha=0.7)+
-  geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-                     labels=trans_format("log10",math_format(10^.x)))+
+  geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean)),colour="gray25",linetype="dashed",size=1.2)+
+ # scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+ #                    labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
+  scale_shape_manual(values=c(19,2,8,10))+scale_x_reverse()+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
@@ -209,7 +208,7 @@ ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
   scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
                      labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
+  scale_shape_manual(values=c(19,2,8,10))+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
@@ -226,7 +225,9 @@ dev.off()
 
 
 
-codasamples.nb <- coda.samples(jags.neg, params, n.iter = 10000)
+
+
+codasamples.nb <- coda.samples(jags.neg, params, n.iter = 50000)
 S.NB1<-ggs(codasamples.nb ,family=c("beta"))
 S.NB2<-ggs(codasamples.nb,family=c("size"))
 
@@ -251,12 +252,12 @@ ggs_density(S.NB)+
 
 
 # Model comparison 
-dicsamples.nb <- dic.samples(jags.neg, params3, n.iter = 10000,type="pD")
+
 
 Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
 Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
 sqrt(mean((Pred-Obs)^2))
-dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 10000,type="pD")
+dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 50000,type="pD")
 
 
 
