@@ -161,27 +161,28 @@ pred.NB2errx<-data.frame(MV_Tx=MV_Tx,mean=pred.NBerrx$statistics[,1],lwr1=pred.N
 
 
 
+N_low<-asinh(pred.NB2err$NGC-N_err)
 
-
-
+N_low[N_low<0]<-0
 
 
 asinh_trans <- function(){
   trans_new(name = 'asinh', transform = function(x) asinh(x), 
             inverse = function(x) sinh(x))
 }
-cairo_pdf("..//Figures/M_Vx.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MV_T,y=asinh(NGC)))+
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr1), ymax=asinh(upr1)), alpha=0.3, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr2), ymax=asinh(upr2)), alpha=0.2, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean),ymin=asinh(lwr3), ymax=asinh(upr3)), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=asinh(NGC-N_err),ymax=asinh(NGC+N_err)),alpha=0.7)+
+cairo_pdf("..//Figures/M_Vx2.pdf",height=8,width=9)
+ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25,alpha=0.7)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_low,ymax=NGC+N_err),alpha=0.7)+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
                                   xmax=MV_T+err_MV_T),alpha=0.7)+
-  geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=asinh(mean)),colour="gray25",linetype="dashed",size=1.2)+
- # scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
- #                    labels=trans_format("log10",math_format(10^.x)))+
+  geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
+                                                                                   expression(10^3),expression(10^4),expression(10^5)))+
+
   scale_colour_gdocs()+
   scale_shape_manual(values=c(19,2,8,10))+scale_x_reverse()+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
@@ -192,8 +193,6 @@ ggplot(pred.NB2err,aes(x=MV_T,y=asinh(NGC)))+
                                axis.title.x=element_text(vjust=-0.25),
                                text = element_text(size=25))
 dev.off()
-
-
 
 pdf("..//Figures/JAGS_NB_M_V.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
