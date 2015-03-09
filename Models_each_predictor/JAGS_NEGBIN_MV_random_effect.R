@@ -148,7 +148,7 @@ for (j in 1:M){
 }
 }"
 inits <- list(beta.0=0,beta.1=0,size=0.1)
-params <- c("beta.0","beta.1","size","prediction.NB","MV_T_true","Fit","New","prediction.NBx")
+params <- c("beta.0","beta.1","size","ranef","prediction.NB","MV_T_true","Fit","New","prediction.NBx")
 
 jags.neg <- jags.model(
   data = jags.data, 
@@ -186,9 +186,9 @@ asinh_trans <- function(){
 }
 cairo_pdf("..//Figures/M_Vx_random.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MV_T,y=NGC))+
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.4, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.3, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.2, fill="gray") +
   geom_point(aes(colour=Type,shape=Type),size=3.25,alpha=0.7)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_low,ymax=NGC+N_err),alpha=0.7)+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
