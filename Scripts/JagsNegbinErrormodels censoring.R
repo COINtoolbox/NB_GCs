@@ -13,21 +13,47 @@ library(scales)
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MBH)) # 1 removed
 #UpM<-min(GCS$MBH)
-UpM<-min(GCS$MBH+GCS$upMBH)
+UpM<-GCS$MBH+GCS$upMBH
 #UpM<-3
 # Censoring information
 isCensored = (GCS$MBH == 0 )
 GCS$MBH[isCensored] = NA
-censorLimitVec = rep(UpM, length(GCS$MBH) )
-#censorLimitVec=UpM
-xinit=rep( NA , length(GCS$MBH) )
+#censorLimitVec = rep(UpM, length(GCS$MBH) )
 
-for(i in 1:sum(isCensored)){
-#xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
-xinit[isCensored][[i]] = round(runif(1,0,censorLimitVec[isCensored ][[i]]),2)
+
+
+treshMat<-matrix(rep(c(quantile(UpM[isCensored]),max(UpM)),length(GCS$MBH)),nrow=length(GCS$MBH),ncol=6,byrow=TRUE)
+censorLimitVec=UpM[isCensored]
+
+
+xbin<-censorLimitVec
+xbin[xbin<=treshMat[1,1]]<-0
+xbin[xbin<=treshMat[1,2] & xbin > treshMat[1,1]]<-1
+xbin[xbin<=treshMat[1,3]  & xbin > treshMat[1,2] ]<-2
+xbin[xbin<=treshMat[1,4]  & xbin > treshMat[1,3]]<-3
+xbin[xbin<=treshMat[1,5]  & xbin > treshMat[1,4]]<-4
+xbin[xbin<=treshMat[1,6]  & xbin > treshMat[1,5]]<-5
+
+MBHbin<-rep(5,length(GCS$MBH) )
+MBHbin[isCensored]<-xbin
+
+# Initialize 
+xinit=rep( NA , length(GCS$MBH) )
+for(i in 1:length(GCS$MBH)){
+  if (is.na(GCS$MBH[i])){
+    if (MBHbin[i]==0){
+      xinit[i]=treshMat[i,1]-1
+    } else if (MBHbin[i]==4){
+      xinit[i]=treshMat[i,ncol(treshMat)]+1
+  } else {
+    xinit[i]= treshMat[i,3]
+  }
 }
 }
-  
+ 
+
+
+
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
@@ -40,9 +66,10 @@ jags.data <- list(
   errN_GC = GCS$N_GC_err,
   N = nrow(GCS),
   errMBH = upMBH,
- isCensored = as.numeric(isCensored), 
- isObserved = as.numeric(!isCensored), 
- censorLimitVec = censorLimitVec
+  
+# isCensored = as.numeric(isCensored), 
+ MBHbin = MBHbin, 
+ treshMat = treshMat
  )
 
 
@@ -53,20 +80,23 @@ beta.1~dnorm(0,0.000001)
 # Prior for size
 size~dunif(0.001,5)
 # Hyperpriors
-meanx ~ dgamma(30,3)
-varx ~ dgamma(2,1)
+#meanx ~ dgamma(30,3)
+#varx ~ dgamma(2,1)
+
+meanx ~ dgamma(0.5,0.5)
+varx ~ dgamma(0.5,0.5)
 for (i in 1:N){
 
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(5,12)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)
 
 }
 # Likelihood function
 for (i in 1:N){
-isObserved[i] ~ dinterval(MBHtrue[i],  censorLimitVec[i])
+MBHbin[i] ~ dinterval(MBH[i],  treshMat[i,])
 MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
-eta[i]<-beta.0+beta.1*MBHtrue[i]+exp(errorN[i]-errN_GC[i])
+eta[i]<-beta.0+beta.1*MBHtrue[i]
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems.
 p[i]<-size/(size+mu[i])
 N_GC[i]~dnegbin(p[i],size)
@@ -79,7 +109,7 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 }
 }"
 
-inits <- list(beta.0=0,beta.1=0,size=0.1,MBHtrue=xinit)
+inits <- list(beta.0=0,beta.1=0,size=0.1,MBH=xinit)
 params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 
