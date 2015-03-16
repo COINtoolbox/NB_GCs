@@ -288,7 +288,7 @@ CairoPDF("..//Figures/posterior_MBH.pdf",height=10,width=8)
 facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
-
+ggs_caterpillar(S.NB)
 
 # Model comparison 
 Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
