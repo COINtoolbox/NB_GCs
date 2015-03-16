@@ -44,7 +44,7 @@ for(i in 1:length(GCS$MBH)){
     if (MBHbin[i]==0){
       xinit[i]=treshMat[i,1]-1
     } else if (MBHbin[i]==4){
-      xinit[i]=treshMat[i,ncol(treshMat)]+1
+      xinit[i]=treshMat[i,ncol(treshMat)-1]+1
   } else {
     xinit[i]= treshMat[i,3]
   }
@@ -92,7 +92,7 @@ MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)
 }
 # Likelihood function
 for (i in 1:N){
-MBHbin[i] ~ dinterval(MBH[i],  treshMat[i,])
+MBHbin[i] ~ dinterval(MBHtrue[i],  treshMat[i,])
 MBH[i]~dnorm(MBHtrue[i],1/errMBH[i]^2);
 
 errorN[i]~dbin(0.5,2*errN_GC[i])
@@ -109,7 +109,7 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 }
 }"
 
-inits <- list(beta.0=0,beta.1=0,size=0.1,MBH=xinit)
+inits <- list(beta.0=0,beta.1=0,size=0.1,MBHtrue=xinit)
 params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue")
 
 

@@ -213,7 +213,7 @@ S.NB2<-ggs(codasamples.nb,family=c("size"))
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
                                           "size"="k"))
-CairoPDF("..//Figures/Chain_Mdyn.pdf",height=8,width=9)
+CairoPDF("..//Figures/podterior_Mdyn.pdf",height=8,width=9)
 ggs_density(S.NB)+
   scale_colour_economist(guide="none")+
   theme_hc()+
