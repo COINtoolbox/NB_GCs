@@ -88,15 +88,19 @@ size~dunif(0.001,5)
 
 #meanx ~ dgamma(30,3)
 #varx ~ dgamma(2,1)
-meanx ~ dgamma(85,10)
-varx ~ dgamma(2,1)
+#meanx ~ dgamma(85,10)
+#varx ~ dgamma(2,1)
+
+meanx ~ dgamma(0.01,0.01)
+varx ~ dgamma(0.01,0.01)
 
 for (i in 1:N){
 
 #MBHtrue[i]~dunif(5,12)
 
 # MBHtrue[i]~dnorm(8,0.000001) # this would be sensible too
-MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(6,11)
+#MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)T(6,11)
+MBHtrue[i] ~ dgamma(meanx^2/varx,meanx/varx)
 }
 
 # Likelihood function
@@ -165,9 +169,9 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
   inits = list(inits1,inits2,inits3),
   model=model.NB,
   n.chains = 3,
-  adapt=5000,
-  monitor=params,
-  burnin=15000,
+  adapt=2000,
+  monitor=c(params,"dic"),
+   burnin=15000,
   sample=25000,
   summarise=FALSE,
   plots=FALSE
@@ -229,43 +233,12 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
 dev.off()
 
 
-CairoPDF("..//Figures/JAGS_NB_MBH.pdf",height=8,width=9)
-#pdf("..//Figures/JAGS_NB_MBH.pdf",height=8,width=9)
-ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(aes(x=MBHtrue,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7,width=0.2)+
-  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-                                  xmax=MBH+upMBH),alpha=0.7,width=0.2)+
-  geom_line(aes(x=MBHtrue,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-                     labels=trans_format("log10",math_format(10^.x)))+
-  scale_colour_gdocs()+
-  scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme_hc()+
-  ylab(expression(N[GC]))+
-  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
-                                                axis.title.y=element_text(vjust=0.75),
-                                                axis.title.x=element_text(vjust=-0.25),
-                                                text = element_text(size=25))
-dev.off()
 
+# Diagnostics plots
 
-
-
-# Diagnostics
-
-codasamples.nb <- jagssamples.nb
-
-
-
-
-
-S.NB1<-ggs(codasamples.nb ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb,family=c("size"))
+#jagssamples.nb
+S.NB1<-ggs(jagssamples.nb ,family=c("beta"))
+S.NB2<-ggs(jagssamples.nb,family=c("size"))
 
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
@@ -288,13 +261,32 @@ CairoPDF("..//Figures/posterior_MBH.pdf",height=10,width=8)
 facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
-ggs_caterpillar(S.NB)
+# Mixing of chains 
+g0<-ggs_traceplot(S.NB)+
+  scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))+
+  ylab("Parameter value")+
+  xlab("Iteration")+
+  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+
+CairoPDF("chain_poisson.pdf",height=10,width=8)
+g0 
+dev.off()
+
 
 # Model comparison 
-Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
-Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
+Pred<-ggs(jagssamples.nb,family=c("New"))[,"value"]
+Obs<-ggs(jagssamples.nb,family=c("Fit"))[,"value"]
 sqrt(mean((Pred-Obs)^2))
-dicsamples.nb3 <- dic.samples(jags.neg3, params3, n.iter = 50000,type="pD")
+dicsamples.nb <- dic.samples(jagssamples.nb, params, n.iter = 50000,type="pD")
 
 
 
