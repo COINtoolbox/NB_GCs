@@ -169,8 +169,8 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
   n.chains = 3,
   adapt=2000,
   monitor=c(params),
-   burnin=15000,
-  sample=25000,
+   burnin=20000,
+  sample=30000,
   summarise=FALSE,
   plots=FALSE
 )
