@@ -50,12 +50,10 @@ give.n <- function(x){
 
 GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(Mdyn)) # 1 removed
-#dim(GCS)
 N_err<-GCS$N_GC_err
 lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
-#err_sig_e<-GCS$err_sig_e
-
+N = nrow(GCS)
 
 ######## NB with errors ########################################################
 MBHx = seq(from = 0.95 * min(GCS$MBH), 
@@ -150,7 +148,7 @@ for (j in 1:M){
 inits1 <- list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))
 inits2 <- list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))
 inits3 <- list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))
-params <- c("beta.0","beta.1","size","prediction.NB","MBHtrue","Fit","New","prediction.NBx")
+params <- c("beta.0","beta.1","size","PRes","prediction.NB","MBHtrue","Fit","New","prediction.NBx")
 
 
 #inits1<-function(){list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))}
@@ -170,23 +168,18 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
   model=model.NB,
   n.chains = 3,
   adapt=2000,
-  monitor=c(params,"dic"),
+  monitor=c(params),
    burnin=15000,
   sample=25000,
   summarise=FALSE,
   plots=FALSE
 )
-#update(jags.neg, 10000)
 
-#jagssamples.nb <- jags.samples(jags.neg3, params, n.iter = 50000)
 jagssamples.nb <- as.mcmc.list(jags.neg )
 
 
 
 
-#summary(as.mcmc.list(jags.neg,vars="beta.0"))
-#summary(as.mcmc.list(jagssamples.nb$beta.1))
-#summary(as.mcmc.list(jagssamples.nb$size))
 
 MBHtrue<-summary(as.mcmc.list(jags.neg, vars="MBHtrue"),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jags.neg, vars="prediction.NB"),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
@@ -205,8 +198,7 @@ N_low<-pred.NB2err$NGC-N_err
 
 N_low[N_low<0]<-0
 
-#CairoPDF("..//Figures/JAGS_NBx.pdf",height=8,width=9)
-#CairoFonts(regular = 'Calibri:style=Regular')
+
 CairoPDF("..//Figures/MBHx.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
@@ -219,11 +211,8 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_line(data=pred.NB2errx,aes(x=MBHx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
   scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
                                                                                    expression(10^3),expression(10^4),expression(10^5)))+
-#  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-#                     labels=trans_format("log10",math_format(10^.x)))+
   scale_colour_gdocs()+
   scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
   theme_hc()+
   ylab(expression(N[GC]))+
   xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
@@ -236,7 +225,8 @@ dev.off()
 
 # Diagnostics plots
 
-#jagssamples.nb
+#Density 
+
 S.NB1<-ggs(jagssamples.nb ,family=c("beta"))
 S.NB2<-ggs(jagssamples.nb,family=c("size"))
 
@@ -261,7 +251,9 @@ CairoPDF("..//Figures/posterior_MBH.pdf",height=10,width=8)
 facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
+
 # Mixing of chains 
+
 g0<-ggs_traceplot(S.NB)+
   scale_colour_economist(guide="none")+
   theme_hc()+
@@ -277,24 +269,53 @@ g0<-ggs_traceplot(S.NB)+
   xlab("Iteration")+
   facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
 
-CairoPDF("chain_poisson.pdf",height=10,width=8)
+CairoPDF("chain_NB.pdf",height=10,width=8)
 g0 
 dev.off()
 
-
 # Model comparison 
+
+# Predicted vs Observed 
 Pred<-ggs(jagssamples.nb,family=c("New"))[,"value"]
 Obs<-ggs(jagssamples.nb,family=c("Fit"))[,"value"]
 sqrt(mean((Pred-Obs)^2))
-dicsamples.nb <- dic.samples(jagssamples.nb, params, n.iter = 50000,type="pD")
+
+# DIC 
+
+jags.DIC <- jags.model(
+  data = jags.data, 
+  inits = inits1, 
+  textConnection(model.NB),
+  n.chains = 3,
+  n.adapt=2000
+)
+
+update(jags.DIC , 10000)
+dicsamples.nb <- dic.samples(jags.DIC, params, n.iter = 25000,type="pD")
+
+# Dispersion parameter
+
+require(scales)
+Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
+Dipersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
 
 
 
+# Plot residuals vc galaxy type
+clus_data<-data.frame(Pres=Pres,MBH=GCS$MBH,type=GCS$Type)
+p <- ggplot(clus_data, aes(x=type, y=Pres),group=type)+ xlab("Galaxy Type") +
+  ylab("Pearson Residuals")
 
-
-
-
-
-
+pdf("Pres_MBH.pdf",height=5.5,width=9)
+p + stat_boxplot(colour="gray",geom ='errorbar')+geom_boxplot(aes(group=type,colour=type,fill=type),outlier.shape = 19,colour="gray",fatten=2,size=1,outlier.size=2,outlier.colour = "gray",notchwidth = 0.35,notch=F,data=clus_data)+
+  theme_hc()+
+  scale_fill_economist()+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))
+dev.off()
 
 
