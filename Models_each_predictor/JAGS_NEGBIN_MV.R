@@ -355,18 +355,6 @@ dicsamples.nb <- dic.samples(jags.DIC, params, n.iter = 25000,type="pD")
 
 
 
-# Model comparison 
-
-
-Pred<-ggs(codasamples.nb,family=c("New"))[,"value"]
-Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
-sqrt(mean((Pred-Obs)^2))
-dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 50000,type="pD")
-
-
-
-
-
 
 
 

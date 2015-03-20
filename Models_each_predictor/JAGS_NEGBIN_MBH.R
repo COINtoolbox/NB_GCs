@@ -297,7 +297,7 @@ dicsamples.nb <- dic.samples(jags.DIC, params, n.iter = 25000,type="pD")
 
 require(scales)
 Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
-Dipersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
+Dispersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
 
 
 

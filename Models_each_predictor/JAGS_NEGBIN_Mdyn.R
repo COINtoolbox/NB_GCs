@@ -283,7 +283,7 @@ sqrt(mean((Pred-Obs)^2))
 
 require(scales)
 Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
-Dipersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
+Dispersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
 
 
 
