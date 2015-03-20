@@ -206,7 +206,7 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
 dev.off()
 
 CairoPDF("JAGS_NBx.pdf",height=8,width=9)
-CairoFonts(regular = 'Calibri:style=Regular')
+#CairoFonts(regular = 'Calibri:style=Regular')
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
