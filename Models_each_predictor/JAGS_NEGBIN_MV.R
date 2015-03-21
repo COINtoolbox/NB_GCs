@@ -48,7 +48,7 @@ give.n <- function(x){
 
 # Read data
 
-GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
+GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
@@ -188,7 +188,7 @@ asinh_trans <- function(){
   trans_new(name = 'asinh', transform = function(x) asinh(x), 
             inverse = function(x) sinh(x))
 }
-cairo_pdf("..//Figures/M_Vx2.pdf",height=8,width=9)
+cairo_pdf("..//Figures/M_Vxfull.pdf",height=8,width=9)
 ggplot(GCS,aes(x=MV_T,y=N_GC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray",method = "loess") +
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray",method = "loess") +
