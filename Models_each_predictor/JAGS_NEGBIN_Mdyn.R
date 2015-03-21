@@ -183,10 +183,10 @@ N_low[N_low<0]<-0
 #CairoPDF("..//Figures/Mdynx.pdf",height=8,width=9)
 CairoPDF("..//Figures/Mdynx.pdf",height=8,width=9)
 ggplot(GCS,aes(x=Mdyn,y=N_GC))+
-  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray") +
+  geom_ribbon(data=pred.NB2errx,aes(x=Mdynx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.25, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25,alpha=0.8)+
   geom_errorbar(guide="none",aes(colour=Type,ymin=N_low,ymax=N_GC+N_err),alpha=0.7,width=0.05)+
   #  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
   #                                  xmax=MBH+upMBH),alpha=0.7)+
