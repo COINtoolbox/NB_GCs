@@ -299,7 +299,9 @@ require(scales)
 Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
 Dispersion = sum(Pres^2)/(N-3)# beta.0, beta.1 and k, 3 parameters
 
+# Gelman-Rubin
 
+gelman.diag(jagssamples.nb)
 
 # Plot residuals vc galaxy type
 clus_data<-data.frame(Pres=Pres,MBH=GCS$MBH,type=GCS$Type)
