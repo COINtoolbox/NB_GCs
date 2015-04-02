@@ -287,75 +287,80 @@ Overdispersion2 <- sum(E2^2) / (nrow(GCS) - p)
 Overdispersion2
 
 
-#jags.data<-list(
-#  N_GC = GCS$N_GC,
-#  MBH = GCS$MBH,
-#  N = nrow(GCS)
-#)
+jags.data<-list(
+  N_GC = GCS$N_GC,
+  MBH = GCS$MBH,
+  N = nrow(GCS)
+)
 
 # Poisson model
 
-#model.pois<-"model{
-# Priors for regression coefficients
+model.pois<-"model{
+#Priors for regression coefficients
 
-#beta.0~dnorm(0,0.000001)
-#beta.1~dnorm(0,0.000001)
+beta.0~dnorm(0,0.000001)
+beta.1~dnorm(0,0.000001)
 # Likelihood function
-#for (i in 1:N){
-#eta[i]<-beta.0+beta.1*MBH[i]
-#log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
-#N_GC[i]~dpois(mu[i])
+for (i in 1:N){
+eta[i]<-beta.0+beta.1*MBH[i]
+log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
+N_GC[i]~dpois(mu[i])
 # Prediction
-#prediction.pois[i]~dpois(mu[i])
-#}
+prediction.pois[i]~dpois(mu[i])
+}
 
-#}"
+}"
 
 #inits<-list(beta.0=coefficients(glm.pois)[1],beta.1=coefficients(glm.pois)[2])
-#inits<-list(beta.0=0,beta.1=0)
+inits<-list(beta.0=0,beta.1=0)
 
-#params<-c("beta.0","beta.1","prediction.pois")
+params<-c("beta.0","beta.1","prediction.pois")
 
-#jags.pois<-jags.model(
-#  data = jags.data, 
-#  inits = inits, 
-#  textConnection(model.pois),
-#  n.chains = 3,
-#  n.adapt=1000
+jags.pois<-jags.model(
+  data = jags.data, 
+  inits = inits, 
+  textConnection(model.pois),
+  n.chains = 3,
+  n.adapt=1000
   
-#)
-#update(jags.pois, 20000)
-#posterior.pois <- coda.samples(jags.pois, params, n.iter = 50000)
-#jagssamples <- jags.samples(jags.pois, params, n.iter = 50000)
-#pred.pois<-summary(as.mcmc.list(jagssamples$prediction.pois),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-#pred.pois2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.pois$quantiles[,4],lwr1=pred.pois$quantiles[,3],lwr2=pred.pois$quantiles[,2],lwr3=pred.pois$quantiles[,1],upr1=pred.pois$quantiles[,5],upr2=pred.pois$quantiles[,6],upr3=pred.pois$quantiles[,7])
+)
+update(jags.pois, 20000)
+posterior.pois <- coda.samples(jags.pois, params, n.iter = 50000)
+jagssamples <- jags.samples(jags.pois, params, n.iter = 50000)
+pred.pois<-summary(as.mcmc.list(jagssamples$prediction.pois),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+pred.pois2<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBH=GCS$MBH,mean=pred.pois$quantiles[,4],lwr1=pred.pois$quantiles[,3],lwr2=pred.pois$quantiles[,2],lwr3=pred.pois$quantiles[,1],upr1=pred.pois$quantiles[,5],upr2=pred.pois$quantiles[,6],upr3=pred.pois$quantiles[,7])
 
 # Posterior means of beta for comparison with ML estimates
 #summary(as.mcmc.list(jagssamples$beta.0))
 #summary(as.mcmc.list(jagssamples$beta.1))
 
+
+asinh_trans <- function(){
+  trans_new(name = 'asinh', transform = function(x) asinh(x), 
+            inverse = function(x) sinh(x))
+}
 #CairoPDF("JAGS_pois.pdf",height=8,width=9)
-#ggplot(pred.pois2,aes(x=MBH,y=NGC))+
-#  geom_ribbon(aes(ymin=lwr1, ymax=upr1), alpha=0.3, fill="gray") +
-#  geom_ribbon(aes(ymin=lwr2, ymax=upr2), alpha=0.2, fill="gray") +
-#  geom_ribbon(aes(ymin=lwr3, ymax=upr3), alpha=0.1, fill="gray") +
-#  geom_point(aes(colour=Type,shape=Type),size=3.25)+
-#  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
-#  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
-#                                  xmax=MBH+upMBH),alpha=0.7)+
-#  geom_line(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-#  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
-#                     labels=trans_format("log10",math_format(10^.x)))+
-#  scale_colour_gdocs()+
-#  scale_shape_manual(values=c(19,2,8))+
-  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-#  theme_hc()+
-#  ylab(expression(N[GC]))+
-#  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
-#                                                axis.title.y=element_text(vjust=0.75),
-#                                                axis.title.x=element_text(vjust=-0.25),
-#                                                text = element_text(size=25))
-#dev.off()
+ggplot(pred.pois2,aes(x=MBH,y=NGC))+
+  geom_ribbon(aes(ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray") +
+  geom_ribbon(aes(ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray") +
+  geom_ribbon(aes(ymin=lwr3, ymax=upr3), alpha=0.25, fill="gray") +
+  geom_point(aes(colour=Type,shape=Type),size=3.25)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=NGC-N_err,ymax=NGC+N_err),alpha=0.7)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
+                                  xmax=MBH+upMBH),alpha=0.7)+
+  geom_line(aes(x=MBH,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'log10',breaks=trans_breaks("log10",function(x) 10^x),
+                     labels=trans_format("log10",math_format(10^.x)))+
+  scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8))+
+    theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(log~M[BH]/M['\u0298']))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                                                axis.title.y=element_text(vjust=0.75),
+                                                axis.title.x=element_text(vjust=-0.25),
+                                                text = element_text(size=25))
+dev.off()
 
 
 S.pois<-ggs(posterior.pois,family="beta")
