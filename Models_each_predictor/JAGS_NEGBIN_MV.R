@@ -188,6 +188,7 @@ asinh_trans <- function(){
   trans_new(name = 'asinh', transform = function(x) asinh(x), 
             inverse = function(x) sinh(x))
 }
+GCS$Type <- factor(GCS$Type, levels = c("E", "S", "S0", "Irr"))
 cairo_pdf("..//Figures/M_Vxfull.pdf",height=8,width=9)
 ggplot(GCS,aes(x=MV_T,y=N_GC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray",method = "loess") +
