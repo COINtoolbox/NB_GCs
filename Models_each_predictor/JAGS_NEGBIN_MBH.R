@@ -170,7 +170,7 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
   adapt=2000,
   monitor=c(params),
    burnin=20000,
-  sample=30000,
+  sample=50000,
   summarise=FALSE,
   plots=FALSE
 )
@@ -259,7 +259,7 @@ g0<-ggs_traceplot(S.NB)+
   theme_hc()+
   scale_fill_economist()+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
-  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+  theme(panel.margin = unit(2, "lines"),strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
         legend.position="none",plot.title = element_text(hjust=0.5),
         axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
         strip.text.x=element_text(size=25),
@@ -267,9 +267,9 @@ g0<-ggs_traceplot(S.NB)+
         text = element_text(size=25))+
   ylab("Parameter value")+
   xlab("Iteration")+
-  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")
+  facet_grid(Parameter~.,labeller=label_parsed,scales = "free")+coord_cartesian(xlim=c(20000,50000))
 
-CairoPDF("chain_NB.pdf",height=10,width=8)
+CairoPDF("..//Figures/chain_NB.pdf",height=10,width=8)
 g0 
 dev.off()
 
