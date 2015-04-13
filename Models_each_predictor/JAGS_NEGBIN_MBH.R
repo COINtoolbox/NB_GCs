@@ -179,8 +179,6 @@ jagssamples.nb <- as.mcmc.list(jags.neg )
 
 
 
-
-
 MBHtrue<-summary(as.mcmc.list(jags.neg, vars="MBHtrue"),quantiles=0.5)
 pred.NBerr<-summary(as.mcmc.list(jags.neg, vars="prediction.NB"),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[1:45,1],lwr1=pred.NBerr$quantiles[1:45,3],lwr2=pred.NBerr$quantiles[1:45,2],lwr3=pred.NBerr$quantiles[1:45,1],upr1=pred.NBerr$quantiles[1:45,5],upr2=pred.NBerr$quantiles[1:45,6],upr3=pred.NBerr$quantiles[1:45,7])
@@ -272,6 +270,23 @@ g0<-ggs_traceplot(S.NB)+
 CairoPDF("..//Figures/chain_NB.pdf",height=10,width=8)
 g0 
 dev.off()
+
+
+
+
+
+# Caterpillar 
+
+ggs_caterpillar(S.NB)+ scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))
 
 # Model comparison 
 
