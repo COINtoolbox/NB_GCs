@@ -176,7 +176,7 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
 )
 
 jagssamples.nb <- as.mcmc.list(jags.neg )
-
+summary<-extend.jags(jags.neg,drop.monitor=c("PRes","prediction.NB","MBHtrue","Fit","New","prediction.NBx"), summarise=TRUE)
 
 
 MBHtrue<-summary(as.mcmc.list(jags.neg, vars="MBHtrue"),quantiles=0.5)
@@ -224,14 +224,16 @@ dev.off()
 # Diagnostics plots
 
 #Density 
+HPDinterval(jagssamples.nb)
 
 S.NB1<-ggs(jagssamples.nb ,family=c("beta"))
 S.NB2<-ggs(jagssamples.nb,family=c("size"))
 
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
+S.NB$Parameter<- factor(S.NB$Parameter, levels = c("beta.0","beta.1", "size"))
+
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
                                           "size"="k"))
-
 
 g1<-ggs_density(S.NB)+
   scale_colour_economist(guide="none")+
@@ -277,7 +279,7 @@ dev.off()
 
 # Caterpillar 
 
-ggs_caterpillar(S.NB)+ scale_colour_economist(guide="none")+
+ggs_caterpillar(S.NB,family=list("beta","k"))+ scale_colour_economist(guide="none")+
   theme_hc()+
   scale_fill_economist()+
   #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
