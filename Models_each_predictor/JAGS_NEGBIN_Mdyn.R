@@ -77,8 +77,8 @@ beta.1~dnorm(0,0.000001)
 
 # Prior for size
 
-size~dunif(0.001,5)
-
+#size~dunif(0.001,5)
+size~dgamma(0.01,0.01)
 
 # Likelihood function
 
@@ -146,6 +146,8 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
 )
 
 jagssamples.nb <- as.mcmc.list(jags.neg )
+summary<-extend.jags(jags.neg,drop.monitor=c("PRes","prediction.NB","Fit","New","prediction.NBx"), summarise=TRUE)
+
 
 
 #jags.neg <- jags.model(
