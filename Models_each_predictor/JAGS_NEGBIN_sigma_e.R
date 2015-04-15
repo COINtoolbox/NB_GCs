@@ -167,6 +167,8 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
 )
 
 jagssamples.nb <- as.mcmc.list(jags.neg )
+summary<-extend.jags(jags.neg,drop.monitor=c("PRes","prediction.NB","sig_e_true","Fit","New","prediction.NBx"), summarise=TRUE)
+
 
 #update(jags.neg3, 10000)
 

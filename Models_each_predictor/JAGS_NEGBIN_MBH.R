@@ -80,7 +80,7 @@ beta.1~dnorm(0,0.000001)
 
 # Prior for size
 
-size~dunif(0.001,5)
+size~dunif(0.001,10)
 
 # Hyperpriors
 
