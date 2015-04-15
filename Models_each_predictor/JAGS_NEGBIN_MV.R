@@ -48,7 +48,8 @@ give.n <- function(x){
 
 # Read data
 
-GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+#GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
@@ -164,6 +165,8 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
 )
 
 jagssamples.nb <- as.mcmc.list(jags.neg )
+summary<-extend.jags(jags.neg,drop.monitor=c("PRes","MV_T_true","Fit","New","prediction.NBx"), summarise=TRUE)
+
 
 
 #update(jags.neg, 10000)
