@@ -48,13 +48,16 @@ give.n <- function(x){
 # Read data
 
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+Full_type<-read.table(file="..//Dataset//fulltype.dat",header=TRUE)
+GCS$alltype<-Full_type
+GCS$alltype<-as.factor(GCS$alltype)
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
 err_MV_T<-GCS$err_MV_T
 
-type<-match(GCS$Type,unique(GCS$Type))
-Ntype<-length(unique(GCS$Type))
+type<-match(GCS$alltype,unique(GCS$alltype))
+Ntype<-length(unique(GCS$alltype))
 
 ######## NB with errors ########################################################
 MV_Tx = seq(from = 1.05 * min(GCS$MV_T), 
@@ -71,7 +74,7 @@ jags.data <- list(
   M = 500,
   type=type,
   Ntype=Ntype
- )
+)
 
 
 model.NB <- "model{
@@ -120,8 +123,8 @@ N_GC[i]~dnegbin(p[i],size)
 
 # Prediction
 etaTrue[i]<-beta.0+beta.1*MV_T_true[i]
-    log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
-    pTrue[i]<-size/(size+muTrue[i])
+log(muTrue[i])<-max(-20,min(20,etaTrue[i]))
+pTrue[i]<-size/(size+muTrue[i])
 prediction.NB[i]~dnegbin(pTrue[i],size)
 #prediction.NB[i]~dnegbin(p[i],size)
 
@@ -140,10 +143,10 @@ New<-sum(DNew[1:N])
 
 # Prediction for new data
 for (j in 1:M){
-  etax[j]<-beta.0+beta.1*MV_Tx[j]
-  log(mux[j])<-max(-20,min(20,etax[j]))
-  px[j]<-size/(size+mux[j])
-  prediction.NBx[j]~dnegbin(px[j],size)
+etax[j]<-beta.0+beta.1*MV_Tx[j]
+log(mux[j])<-max(-20,min(20,etax[j]))
+px[j]<-size/(size+mux[j])
+prediction.NBx[j]~dnegbin(px[j],size)
 }
 }"
 inits1 <- list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))
