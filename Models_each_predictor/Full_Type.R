@@ -49,15 +49,22 @@ give.n <- function(x){
 
 GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
 Full_type<-read.table(file="..//Dataset//fulltype.dat",header=TRUE)
-GCS$alltype<-Full_type
-GCS$alltype<-as.factor(GCS$alltype)
+GCS$alltype<-Full_type$fulltype
+GCS$alltype<-GCS$alltype
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
 err_MV_T<-GCS$err_MV_T
 
-type<-match(GCS$alltype,unique(GCS$alltype))
+#type<-match(GCS$alltype,unique(GCS$alltype))
+
+type<-match(Full_type$fulltype,unique(Full_type$fulltype))
 Ntype<-length(unique(GCS$alltype))
+
+
+
+
+
 
 ######## NB with errors ########################################################
 MV_Tx = seq(from = 1.05 * min(GCS$MV_T), 
