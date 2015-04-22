@@ -48,8 +48,8 @@ give.n <- function(x){
 
 # Read data
 
-#GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
-GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
+GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+#GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err
@@ -264,7 +264,7 @@ g1<-ggs_density(S.NB)+
         strip.text.x=element_text(size=25),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
-CairoPDF("..//Figures/posterior_MV.pdf",height=10,width=8)
+CairoPDF("..//Figures/posterior_MV_full.pdf",height=10,width=8)
 facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
