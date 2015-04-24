@@ -169,12 +169,12 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
                      inits = list(inits1,inits2,inits3),
                      model=model.NB,
                      n.chains = 3,
-                     adapt=2500,
+                     adapt=1000,
                      monitor=c(params),
-                     burnin=20000,
+                     burnin=15000,
                      sample=30000,
                      summarise=FALSE,
-                     thin=5,
+                     thin=2,
                      plots=FALSE
 )
 
@@ -226,9 +226,22 @@ dev.off()
 
 
 
-S.full <- ggs(jagssamples.nb,family=c("ranef"))
+L.radon.intercepts <- data.frame(
+  Parameter=paste("ranef[", seq(1:69), "]", sep=""),
+  Label=levels(Full_type$fulltype))
+head(L.radon.intercepts)
 
-ggs_caterpillar(S.full)
+S.full <- ggs(jagssamples.nb,par_labels=L.radon.intercepts,family=c("ranef"))
+
+pdf("..//Figures/random.pdf",height=14,width=9)
+ggs_caterpillar(S.full)+
+  theme_hc()+ scale_colour_economist()+
+  theme(legend.position="none",plot.title = element_text(hjust=0.5),
+         axis.title.y=element_text(vjust=0.75),
+         axis.title.x=element_text(vjust=-0.25),
+         text = element_text(size=12.5))
+dev.off()
+
 
 
 
@@ -286,6 +299,8 @@ ggs_density(S.NB)+
         strip.text.x=element_text(size=25),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+
+
 
 
 

@@ -218,7 +218,10 @@ dev.off()
 
 S.full <- ggs(jagssamples.nb,family=c("ranef"))
 
-ggs_caterpillar(S.full)
+ggs_caterpillar(S.full)+scale_colour_gdocs()+
+  scale_shape_manual(values=c(19,2,8,10))+scale_x_reverse()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()
 
 
 
