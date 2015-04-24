@@ -232,16 +232,20 @@ L.radon.intercepts <- data.frame(
 head(L.radon.intercepts)
 
 S.full <- ggs(jagssamples.nb,par_labels=L.radon.intercepts,family=c("ranef"))
+library(RColorBrewer)
+blues_fun <- colorRampPalette(brewer.pal(9,"Blues"))
+blues=blues_fun(69)
+
 
 pdf("..//Figures/random.pdf",height=14,width=9)
 ggs_caterpillar(S.full)+
-  theme_hc()+ scale_colour_economist()+
+  theme_hc()+ 
   theme(legend.position="none",plot.title = element_text(hjust=0.5),
          axis.title.y=element_text(vjust=0.75),
          axis.title.x=element_text(vjust=-0.25),
-         text = element_text(size=12.5))
+         text = element_text(size=12.5))+aes(color=Parameter)+
+  scale_color_manual(guide="none",values = blues)
 dev.off()
-
 
 
 
@@ -278,17 +282,15 @@ dev.off()
 
 
 
-codasamples.nb <- coda.samples(jags.neg, params, n.iter = 50000)
-S.NB1<-ggs(codasamples.nb ,family=c("beta"))
-S.NB2<-ggs(codasamples.nb,family=c("size"))
-
-
+S.NB1<-ggs(jagssamples.nb ,family=c("beta"))
+S.NB2<-ggs(jagssamples.nb,family=c("size"))
 
 S.NB<-rbind(S.NB1,S.NB2,deparse.level=2)
 S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
                                           "size"="k"))
 
-ggs_density(S.NB)+
+
+g1<-ggs_density(S.NB)+
   scale_colour_economist(guide="none")+
   theme_hc()+
   scale_fill_economist()+
@@ -299,7 +301,9 @@ ggs_density(S.NB)+
         strip.text.x=element_text(size=25),
         axis.title.x=element_text(vjust=-0.25),
         text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
-
+CairoPDF("..//Figures/posterior_MV_full.pdf",height=10,width=8)
+facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
+dev.off()
 
 
 
@@ -312,6 +316,29 @@ Obs<-ggs(codasamples.nb,family=c("Fit"))[,"value"]
 sqrt(mean((Pred-Obs)^2))
 dicsamples.nb <- dic.samples(jags.neg, params, n.iter = 50000,type="pD")
 
+Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
+
+
+# Plot residuals vc galaxy type
+clus_data<-data.frame(Pres=Pres,type=GCS$alltype)
+p <- ggplot(clus_data, aes(x=type, y=Pres),group=type)+ xlab("Galaxy Type") +
+  ylab("Pearson Residuals")
+
+
+
+
+
+pdf("..//Figures/Pres_random.pdf",height=6,width=14)
+p + stat_boxplot(colour="gray",geom ='errorbar')+geom_boxplot(aes(group=type,colour=type,fill=type),outlier.shape = 19,colour="gray",fatten=2,size=1,outlier.size=2,outlier.colour = "gray",notchwidth = 0.35,notch=F,data=clus_data)+
+  theme_hc()+
+  scale_fill_manual(guide="none",values = blues)+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(angle=-90,size=12.5),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))
+dev.off()
 
 
 
