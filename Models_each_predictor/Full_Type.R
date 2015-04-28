@@ -69,7 +69,7 @@ GCS = subset(GCS, !is.na(MV_T))
 #dim(GCS)
 N_err<-GCS$N_GC_err
 err_MV_T<-GCS$err_MV_T
-
+N = nrow(GCS)
 #type<-match(GCS$alltype,unique(GCS$alltype))
 
 type<-match(Full_type$fulltype,unique(Full_type$fulltype))
@@ -247,18 +247,19 @@ head(L.radon.intercepts)
 
 S.full <- ggs(jagssamples.nb,par_labels=L.radon.intercepts,family=c("ranef"))
 library(RColorBrewer)
-blues_fun <- colorRampPalette(brewer.pal(9,"Blues"))
+blues_fun <- colorRampPalette(brewer.pal(9,"Blues")[4:9])
 blues=blues_fun(69)
 
 
 pdf("..//Figures/random.pdf",height=14,width=9)
-ggs_caterpillar(S.full)+
+ggs_caterpillar(S.full)+geom_vline(aes(yintercept=0),color="gray80",size=1,linetype="dashed")+
   theme_hc()+ 
   theme(legend.position="none",plot.title = element_text(hjust=0.5),
-         axis.title.y=element_text(vjust=0.75),
-         axis.title.x=element_text(vjust=-0.25),
-         text = element_text(size=12.5))+aes(color=Parameter)+
-  scale_color_manual(guide="none",values = blues)
+         axis.title.y=element_text(size=25,vjust=0.75),
+         axis.title.x=element_text(size=25,vjust=-0.25),axis.text.x =element_text(size=25),
+         text = element_text(size=17))+aes(color=Parameter)+
+  scale_color_manual(guide="none",values = blues)+ylab("Galaxy Type")+
+  xlab(expression(paste(zeta[i]," Highest Posterior Density"," ")))
 dev.off()
 
 
@@ -319,6 +320,15 @@ CairoPDF("..//Figures/posterior_MV_full.pdf",height=10,width=8)
 facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
+
+
+
+
+# Dispersion parameter
+
+require(scales)
+Pres<-summary(as.mcmc.list(jags.neg, vars="PRes"),quantiles=0.5)$quantiles
+Dipersion = sum(Pres^2)/(N-72)# beta.0, beta.1 and k, 3 parameters + 69 random intercepts
 
 
 
