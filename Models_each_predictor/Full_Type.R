@@ -183,10 +183,10 @@ jags.neg <- run.jags(method="rjparallel", method.options=list(cl=cl),
                      inits = list(inits1,inits2,inits3),
                      model=model.NB,
                      n.chains = 3,
-                     adapt=1000,
+                     adapt=1500,
                      monitor=c(params),
-                     burnin=20000,
-                     sample=30000,
+                     burnin=25000,
+                     sample=45000,
                      summarise=FALSE,
                      thin=2,
                      plots=FALSE
@@ -259,7 +259,7 @@ ggs_caterpillar(S.full)+geom_vline(aes(yintercept=0),color="gray80",size=1,linet
          axis.title.x=element_text(size=25,vjust=-0.25),axis.text.x =element_text(size=25),
          text = element_text(size=17))+aes(color=Parameter)+
   scale_color_manual(guide="none",values = blues)+ylab("Galaxy Type")+
-  xlab(expression(paste(zeta[i]," Highest Posterior Density"," ")))
+  xlab(expression(paste(zeta[j]," Highest Posterior Density"," ")))
 dev.off()
 
 
@@ -293,10 +293,6 @@ dev.off()
 # Diagnostics
 
 
-
-
-
-
 S.NB1<-ggs(jagssamples.nb ,family=c("beta"))
 S.NB2<-ggs(jagssamples.nb,family=c("size"))
 
@@ -321,7 +317,28 @@ facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
 dev.off()
 
 
+# random intercepts
 
+
+S.ran<-ggs(jagssamples.nb ,family=c("ranef"))
+S.NB$Parameter<-revalue(S.NB$Parameter, c("beta.0"=expression(beta[0]), "beta.1"=expression(beta[1]),
+                                          "size"="k"))
+
+
+gran<-ggs_density(S.ran)+
+  scale_colour_economist(guide="none")+
+  theme_hc()+
+  scale_fill_economist()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme(strip.background = element_rect(fill="gray95"),plot.background = element_rect(fill = 'white', colour = 'white'),
+        legend.position="none",plot.title = element_text(hjust=0.5),
+        axis.title.y=element_text(vjust=0.75),axis.text.x=element_text(size=25),
+        strip.text.x=element_text(size=25),
+        axis.title.x=element_text(vjust=-0.25),
+        text = element_text(size=25))+xlab("Parameter  value")+ylab("Density")
+CairoPDF("..//Figures/posterior_MV_full.pdf",height=10,width=8)
+facet_wrap_labeller(g1,labels=c(expression(beta[0]),expression(beta[1]),"k"))
+dev.off()
 
 
 # Dispersion parameter
