@@ -81,9 +81,9 @@ Ntype<-length(unique(GCS$alltype))
 
 
 ######## NB with errors ########################################################
-MV_Tx = seq(from = 1.05 * min(GCS$MV_T), 
-            to = 0.95 * max(GCS$MV_T), 
-            length.out = 500)
+MV_Tx = seq(from = 1.1 * min(GCS$MV_T), 
+            to = 0.90 * max(GCS$MV_T), 
+            length.out = 600)
 
 jags.data <- list(
   N_GC = GCS$N_GC,
@@ -92,7 +92,7 @@ jags.data <- list(
   N = nrow(GCS),
   err_MV_T = err_MV_T,
   MV_Tx = MV_Tx,
-  M = 500,
+  M = 600,
   type=type,
   Ntype=Ntype
 )

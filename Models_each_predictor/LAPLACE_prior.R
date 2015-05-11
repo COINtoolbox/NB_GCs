@@ -15,7 +15,7 @@ Gauss2<-data.frame(x,Dnorm=dnorm(x,0,0.5))
 cairo_pdf("..//Figures/Laplace_prior.pdf",height=8,width=9)
 ggplot(Lap1,aes(x=x,y=dlap))+
   geom_line(color="blue3")+
-  geom_line(data=Gauss,aes(x=x,y=Dnorm),color="blue3",linetype="dashed")+
+  geom_line(data=Gauss1,aes(x=x,y=Dnorm),color="blue3",linetype="dashed")+
   geom_line(data=Gauss2,aes(x=x,y=Dnorm),color="cyan3",linetype="dashed")+
   geom_line(data=Lap2,aes(x=x,y=dlap),color="cyan3")+
    theme_hc()+
