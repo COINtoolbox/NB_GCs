@@ -76,9 +76,9 @@ type<-match(Full_type$fulltype,levels(Full_type$fulltype))
 Ntype<-length(unique(GCS$alltype))
 
 
+aggregate(x=GCS[,c("N_GC","MV_T")], by = list(GCS$alltype), FUN = "mean")
 
-
-
+aggregate(x=GCS[,c("N_GC","MV_T")], by = list(GCS$alltype), FUN = "mad")
 
 ######## NB with errors ########################################################
 MV_Tx = seq(from = 1.1 * min(GCS$MV_T), 
@@ -245,6 +245,48 @@ dev.off()
 
 
 
+GCS$out<-rep("no",nrow(GCS))
+GCS$out[which(GCS$alltype=="Sb")]<-"yes"
+GCS$out[which(GCS$alltype=="SB0")]<-"yes"
+GCS$out[which(GCS$alltype=="S0")]<-"yes"
+GCS$out[which(GCS$alltype=="dE0N")]<-"yes"
+GCS$out[which(GCS$alltype=="dE1N")]<-"yes"
+GCS$out[which(GCS$alltype=="MG")]<-"yes"
+
+cairo_pdf("..//Figures/M_Vxfull_out.pdf",height=8,width=9)
+ggplot(GCS,aes(x=MV_T,y=N_GC))+
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray",method = "loess") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray",method = "loess") +
+  geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr3, ymax=upr3), alpha=0.25, fill="gray",method = "loess") +
+  geom_point(guide="none",aes(colour=Type,shape=out,alpha=out),size=3)+
+  geom_errorbar(guide="none",aes(colour=Type,ymin=N_low,ymax=N_GC+N_err),alpha=0.3,width=0.05)+
+  geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
+                                  xmax=MV_T+err_MV_T),alpha=0.3,height=0.05)+
+  geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
+                                                                                   expression(10^3),expression(10^4),expression(10^5)))+
+  
+  scale_colour_gdocs()+
+  scale_alpha_manual(name="Additional Intercept",values=c(0.3,1))+
+  scale_shape_manual(name="Additional Intercept",values=c(8,16))+
+ # scale_shape_manual(values=c(19,2,8,10))
+  scale_x_reverse()+
+  #  theme_economist_white(gray_bg = F, base_size = 11, base_family = "sans")+
+  theme_hc()+
+  ylab(expression(N[GC]))+
+  xlab(expression(M[V]))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
+                               axis.title.y=element_text(vjust=0.75),
+                               axis.title.x=element_text(vjust=-0.25),
+                               text = element_text(size=25))+
+  coord_cartesian(x=c(-10,-25))
+dev.off()
+
+
+
+
+
+
+
 L.radon.intercepts <- data.frame(
   Parameter=paste("ranef[", seq(1:69), "]", sep=""),
   Label=levels(Full_type$fulltype))
@@ -266,6 +308,12 @@ ggs_caterpillar(S.full)+geom_vline(aes(yintercept=0),color="gray80",size=1,linet
   scale_color_manual(guide="none",values = blues)+ylab("Galaxy Type")+
   xlab(expression(paste(zeta[i]," Highest Posterior Density"," ")))
 dev.off()
+
+
+
+
+
+
 
 
 
