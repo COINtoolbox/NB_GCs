@@ -72,7 +72,7 @@ err_MV_T<-GCS$err_MV_T
 N = nrow(GCS)
 #type<-match(GCS$alltype,unique(GCS$alltype))
 
-type<-match(Full_type$fulltype,unique(Full_type$fulltype))
+type<-match(Full_type$fulltype,levels(Full_type$fulltype))
 Ntype<-length(unique(GCS$alltype))
 
 
@@ -115,7 +115,7 @@ sdBeta ~ dgamma(0.01,0.01)
 
 # Prior for size
 
-size~dunif(0.001,5)
+size~dgamma(0.01,0.01)
 
 #
 
@@ -217,8 +217,8 @@ asinh_trans <- function(){
   trans_new(name = 'asinh', transform = function(x) asinh(x), 
             inverse = function(x) sinh(x))
 }
-
-cairo_pdf("..//Figures/M_Vx_random.pdf",height=8,width=9)
+GCS$Type <- factor(GCS$Type, levels = c("E", "S", "S0", "Irr"))
+cairo_pdf("..//Figures/M_Vxfull.pdf",height=8,width=9)
 ggplot(GCS,aes(x=MV_T,y=N_GC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray",method = "loess") +
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray",method = "loess") +
@@ -239,7 +239,8 @@ ggplot(GCS,aes(x=MV_T,y=N_GC))+
   xlab(expression(M[V]))+theme(legend.position="top",plot.title = element_text(hjust=0.5),
                                axis.title.y=element_text(vjust=0.75),
                                axis.title.x=element_text(vjust=-0.25),
-                               text = element_text(size=25))
+                               text = element_text(size=25))+
+  coord_cartesian(x=c(-10,-25))
 dev.off()
 
 
