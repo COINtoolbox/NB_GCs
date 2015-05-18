@@ -103,9 +103,15 @@ eta[i]<-beta.0+beta.1*MV_T_true[i]
 
 #log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems.
 log(mu[i])<-log(exp(eta[i])+errorN[i]-errN_GC[i])
-p[i]<-size/(size+mu[i])
 
-N_GC[i]~dnegbin(p[i],size)
+# Using dnegbin
+#N_GC[i]~dnegbin(p[i],size)
+#p[i]<-size/(size+mu[i])
+
+#Using mixture of Poisson and Gamma
+N_GC[i]~dpois(g[i])
+g[i]~dgamma(size,rateParm[i])
+rateParm[i]<-size/mu[i]
 
 # Prediction
 etaTrue[i]<-beta.0+beta.1*MV_T_true[i]
@@ -115,7 +121,8 @@ prediction.NB[i]~dnegbin(pTrue[i],size)
 #prediction.NB[i]~dnegbin(p[i],size)
 
 # Discrepancy measures
-YNew[i] ~ dnegbin(p[i],size)
+#YNew[i] ~ dnegbin(p[i],size)
+YNew[i] ~ dpois(g[i])
 expY[i] <- mu[i]
 varY[i] <- mu[i] + pow(mu[i],2) / size
 PRes[i] <-(N_GC[i] - expY[i])/sqrt(varY[i])
@@ -131,8 +138,11 @@ New<-sum(DNew[1:N])
 for (j in 1:M){
   etax[j]<-beta.0+beta.1*MV_Tx[j]
   log(mux[j])<-max(-20,min(20,etax[j]))
-  px[j]<-size/(size+mux[j])
-  prediction.NBx[j]~dnegbin(px[j],size)
+#  px[j]<-size/(size+mux[j])
+#  prediction.NBx[j]~dnegbin(px[j],size)
+prediction.NBx[j]~dpois(gx[j])
+gx[j]~dgamma(size,rateParmx[j])
+rateParmx[j]<-size/mux[j]
 }
 }"
 inits1 <- list(beta.0=rnorm(1,0,0.1),beta.1=rnorm(1,0,0.1),size=runif(1,0.1,5))
