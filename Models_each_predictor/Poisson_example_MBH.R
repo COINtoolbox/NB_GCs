@@ -55,6 +55,9 @@ lowMBH<-GCS$lowMBH
 upMBH<-GCS$upMBH
 err_sig_e<-GCS$err_sig_e
 N = nrow(GCS)
+
+
+# Data list for JAGS
 jags.data <- list(
   N_GC = GCS$N_GC,
   MBH = GCS$MBH,
@@ -68,11 +71,13 @@ model.pois<-"model{
 
 beta.0~dnorm(0,0.000001)
 beta.1~dnorm(0,0.000001)
+
 # Likelihood function
 for (i in 1:N){
 eta[i]<-beta.0+beta.1*MBH[i]
 log(mu[i])<-max(-20,min(20,eta[i]))# Ensures that large beta values do not cause numerical problems. 
 N_GC[i]~dpois(mu[i])
+#
 # Prediction
 prediction.pois[i]~dpois(mu[i])
 # Discrepancy measures
