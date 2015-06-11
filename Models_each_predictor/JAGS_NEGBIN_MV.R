@@ -48,8 +48,8 @@ give.n <- function(x){
 
 # Read data
 
-GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
-#GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
+#GCS = read.csv(file="..//Dataset//GCs_full.csv",header=TRUE,dec=".",sep="")
+GCS = read.csv(file="..//Dataset//GCs.csv",header=TRUE,dec=".",sep="")
 GCS = subset(GCS, !is.na(MV_T)) 
 #dim(GCS)
 N_err<-GCS$N_GC_err

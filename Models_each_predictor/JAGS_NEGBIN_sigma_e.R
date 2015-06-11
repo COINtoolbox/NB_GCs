@@ -199,6 +199,8 @@ ggplot(GCS,aes(x=sig_e,y=N_GC))+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=sig_e-GCS$err_sig_e,
                                   xmax=sig_e+err_sig_e),alpha=0.7,height=0.05)+
   geom_line(data=pred.NB2errx,aes(x=sig_ex,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  annotate("text", x = 105.0, y = 800, label = "Milky Way",size = 6.5)+
+  geom_segment(aes(x =  105.05, y = 600, xend = 105.03, yend = 200), arrow = arrow(length = unit(0.25, "cm")))+
   scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
                                                                                    expression(10^3),expression(10^4),expression(10^5)))+
   
