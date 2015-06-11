@@ -11,7 +11,7 @@ library(plyr)
 library(MASS)
 library(scales)
 require(runjags)
-
+library(grid) 
 
 # Function to allow parse labels in facet_wrap
 facet_wrap_labeller <- function(gg.plot,labels=NULL) {
@@ -197,7 +197,7 @@ N_low<-pred.NB2err$NGC-N_err
 N_low[N_low<0]<-0
 
 
-CairoPDF("..//Figures/MBHx.pdf",height=8,width=9)
+CairoPDF("..//Figures/MBHx_alternative.pdf",height=8,width=9)
 ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray") +
   geom_ribbon(data=pred.NB2errx,aes(x=MBHx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray") +
@@ -207,6 +207,8 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
                                   xmax=MBH+upMBH),alpha=0.7,height=0.05)+
   geom_line(data=pred.NB2errx,aes(x=MBHx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  annotate("text", x = 6.63, y = 800, label = "You are here",size = 6.5)+
+  geom_segment(aes(x =  6.65, y = 600, xend = 6.61, yend = 200), arrow = arrow(length = unit(0.25, "cm")))+
   scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
                                                                                    expression(10^3),expression(10^4),expression(10^5)))+
   scale_colour_gdocs()+
