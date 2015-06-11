@@ -202,7 +202,7 @@ asinh_trans <- function(){
             inverse = function(x) sinh(x))
 }
 GCS$Type <- factor(GCS$Type, levels = c("E", "S", "S0", "Irr"))
-cairo_pdf("..//Figures/M_Vxfull.pdf",height=8,width=9)
+cairo_pdf("..//Figures/M_Vx2.pdf",height=8,width=9)
 ggplot(GCS,aes(x=MV_T,y=N_GC))+
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr1, ymax=upr1), alpha=0.45, fill="gray",method = "loess") +
   geom_ribbon(data=pred.NB2errx,aes(x=MV_Tx,y=mean,ymin=lwr2, ymax=upr2), alpha=0.35, fill="gray",method = "loess") +
@@ -212,6 +212,8 @@ ggplot(GCS,aes(x=MV_T,y=N_GC))+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MV_T-GCS$err_MV_T,
                                   xmax=MV_T+err_MV_T),alpha=0.7,height=0.05)+
   geom_line(data=pred.NB2errx,aes(x=MV_Tx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
+  annotate("text", x = -21.35, y = 15, label = "Milky Way",size = 6.5)+
+  geom_segment(aes(x =  -21.37, y = 20, xend = -21.32, yend = 140), arrow = arrow(length = unit(0.25, "cm")))+
   scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
                                                                                    expression(10^3),expression(10^4),expression(10^5)))+
 
