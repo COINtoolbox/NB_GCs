@@ -12,12 +12,10 @@ library(Cairo)
 library(plyr)
 library(MASS)
 library(scales)
-library(grid) 
 library(runjags)
 library(parallel)
-
+library(scales)
 ##########################################
-
 
 ###########################################
 ##Auxiliar functions for ploting 
@@ -203,8 +201,8 @@ print(summary)
 
 ## Below are plot diagnostics
 MBHtrue<-summary(as.mcmc.list(jags.neg, vars="MBHtrue"),quantiles=0.5)
-pred.NBerr<-summary(as.mcmc.list(jags.neg, vars="prediction.NB"),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
-pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[1:45,1],lwr1=pred.NBerr$quantiles[1:45,3],lwr2=pred.NBerr$quantiles[1:45,2],lwr3=pred.NBerr$quantiles[1:45,1],upr1=pred.NBerr$quantiles[1:45,5],upr2=pred.NBerr$quantiles[1:45,6],upr3=pred.NBerr$quantiles[1:45,7])
+#pred.NBerr<-summary(as.mcmc.list(jags.neg, vars="prediction.NB"),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
+#pred.NB2err<-data.frame(Type=GCS$Type,NGC=GCS$N_GC,MBHtrue=MBHtrue$quantiles,MBH=GCS$MBH,mean=pred.NBerr$statistics[1:45,1],lwr1=pred.NBerr$quantiles[1:45,3],lwr2=pred.NBerr$quantiles[1:45,2],lwr3=pred.NBerr$quantiles[1:45,1],upr1=pred.NBerr$quantiles[1:45,5],upr2=pred.NBerr$quantiles[1:45,6],upr3=pred.NBerr$quantiles[1:45,7])
 pred.NBerrx<-summary(as.mcmc.list(jags.neg,vars="prediction.NBx"),quantiles=c(0.005,0.025,0.25,0.5,0.75,0.975, 0.995))
 pred.NB2errx<-data.frame(MBHx=MBHx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBerrx$quantiles[,3],lwr2=pred.NBerrx$quantiles[,2],lwr3=pred.NBerrx$quantiles[,1],upr1=pred.NBerrx$quantiles[,5],upr2=pred.NBerrx$quantiles[,6],upr3=pred.NBerrx$quantiles[,7])
 
@@ -212,6 +210,7 @@ pred.NB2errx<-data.frame(MBHx=MBHx,mean=pred.NBerrx$statistics[,1],lwr1=pred.NBe
 
 #N_low<-asinh(pred.NB2err$NGC-N_err)
 N_low<-pred.NB2err$NGC-N_err
+
 N_low[N_low<0]<-0
 
 CairoPDF("..//Figures/MBHx.pdf",height=8,width=9)
@@ -224,8 +223,6 @@ ggplot(pred.NB2err,aes(x=MBH,y=NGC))+
   geom_errorbarh(guide="none",aes(colour=Type,xmin=MBH-GCS$lowMBH,
                                   xmax=MBH+upMBH),alpha=0.7,height=0.05)+
   geom_line(data=pred.NB2errx,aes(x=MBHx,y=mean),colour="gray25",linetype="dashed",size=1.2)+
-  annotate("text", x = 6.63, y = 800, label = "Milky Way",size = 6.5)+
-  geom_segment(aes(x =  6.65, y = 600, xend = 6.61, yend = 200), arrow = arrow(length = unit(0.25, "cm")))+
   scale_y_continuous(trans = 'asinh',breaks=c(0,10,100,1000,10000,100000),labels=c("0",expression(10^1),expression(10^2),
                                                                                    expression(10^3),expression(10^4),expression(10^5)))+
   scale_colour_gdocs()+
